@@ -68,3 +68,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'designationid', 'designation',
             'basicsalary', 'attendancemachineid'
         ]
+
+    def validate_employeecode(self, value):
+        if Employees.objects.filter(employeecode=value, isdelete=False).exists():
+            raise serializers.ValidationError("This employee code is already used.")
+        return value
+    
+    def validate_cnic(self, value):
+        if value and Employees.objects.filter(cnic=value, isdelete=False).exists():
+            raise serializers.ValidationError("This CNIC is already used.")
+        return value

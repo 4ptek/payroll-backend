@@ -43,3 +43,13 @@ class UsersSerializer(serializers.ModelSerializer):
         if raw_password:
             validated_data['userpassword'] = make_password(raw_password)
         return super().update(instance, validated_data)
+    
+    def validate_email(self, value):
+        if value and Users.objects.filter(email=value, isdelete=False).exists():
+            raise serializers.ValidationError("This email is already used.")
+        return value
+    
+    def validate_username(self, value):
+        if Users.objects.filter(username=value, isdelete=False).exists():
+            raise serializers.ValidationError("This username is already used.")
+        return value
