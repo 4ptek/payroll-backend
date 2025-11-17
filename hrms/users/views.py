@@ -5,8 +5,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.backends import TokenBackend
 from django.conf import settings
-from users.serializers import UsersSerializer
-from .models import Users
+from users.serializers import UserRoleSerializer, UsersSerializer
+from .models import Userroles, Users
 from django.utils import timezone
 from django.core.mail import send_mail
 from rest_framework import permissions
@@ -47,6 +47,10 @@ class LoginView(APIView):
 
         # Create JWT tokens
         refresh = RefreshToken.for_user(user)
+        org_id = user.organizationid.id if user.organizationid else None
+        refresh["org_id"] = org_id
+        refresh.access_token["org_id"] = org_id
+
         return Response(
             {
                 "refresh": str(refresh),
@@ -212,6 +216,8 @@ class UserDetailView(APIView):
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = UsersSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
+            user.updatedby = request.user
+            user.updateat = timezone.now()
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -225,3 +231,18 @@ class UserDetailView(APIView):
         user.deleteat = timezone.now()
         user.save()
         return Response({"detail": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
+class UserRoleListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        roles = Userroles.objects.filter(isactive=True, isdelete=False)
+        serializer = UserRoleSerializer(roles, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = UserRoleSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
