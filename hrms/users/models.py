@@ -33,7 +33,7 @@ class Users(models.Model):
 
 
 class Userroles(models.Model):
-    rolename = models.CharField(max_length=550, blank=True, null=True)
+    rolename = models.CharField(max_length=550, blank=True, null=True, unique=True)
     createdby = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='createdby', blank=True, null=True)
     isactive = models.BooleanField(blank=True, null=True)
     isdelete = models.BooleanField(blank=True, null=True)
