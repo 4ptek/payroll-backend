@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Organizations
-from .serializers import OrganizationSerializer
+from .serializers import OrganizationSerializer, OrganizationRoleSerializer
 from django.utils import timezone
 
 class OrganizationListView(APIView):
@@ -61,3 +61,18 @@ class OrganizationDetailView(APIView):
         organization.deleteat = timezone.now()
         organization.save()
         return Response({"detail": "Organization deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class OrganizationRoleCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = OrganizationRoleSerializer(data=request.data)
+        if serializer.is_valid():
+            org_id = request.auth.get("org_id")
+            if not org_id:
+                return Response({"detail": "Organization not found in token"}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer.save(organizationid_id=org_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
