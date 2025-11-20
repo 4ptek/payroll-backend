@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from .models import Organizations
-    
+from .models import Organizationroles
+from rest_framework.validators import UniqueValidator  
+from django.utils import timezone
+
+class OrganizationRoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organizationroles
+        fields = ['id', 'name', 'reportto', 'organizationid']
+        read_only_fields = ['organizationid'] 
+        extra_kwargs = {
+            'name': {'validators': [UniqueValidator(queryset=Organizationroles.objects.all())]}
+        }
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organizations
