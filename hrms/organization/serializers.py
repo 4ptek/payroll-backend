@@ -12,7 +12,15 @@ class OrganizationRoleSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'name': {'validators': [UniqueValidator(queryset=Organizationroles.objects.all())]}
         }
-
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.reportto:
+                data['reportto'] = {
+                "id": instance.reportto.id,
+                "name": instance.reportto.name,
+            }
+        return data
+            
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organizations
