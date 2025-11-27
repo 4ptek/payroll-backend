@@ -246,3 +246,42 @@ class UserRoleListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class UserRoleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Userroles.objects.get(pk=pk, isdelete=False)
+        except Userroles.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        role = self.get_object(pk)
+        if not role:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UserRoleSerializer(role)
+        return Response(serializer.data)
+    
+    def patch(self, request, pk):  
+        role = self.get_object(pk)
+        if not role:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = UserRoleSerializer(role, data=request.data, partial=True)
+        if serializer.is_valid():
+            role.updatedby = request.user
+            role.updateat = timezone.now()
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            role = Userroles.objects.get(pk=pk)
+            role.delete() 
+            return Response({"message": "Role deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Userroles.DoesNotExist:
+            return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
