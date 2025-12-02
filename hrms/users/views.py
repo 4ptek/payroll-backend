@@ -121,7 +121,7 @@ class ForgotPasswordView(APIView):
         reset_token = str(refresh.access_token)
 
         # Build reset URL
-        reset_url = f"http://localhost:8001/reset-password?token={reset_token}"
+        reset_url = f"http://localhost:8001/resetPassword/{reset_token}"
 
         # Send email
         send_mail(
