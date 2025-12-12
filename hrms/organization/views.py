@@ -5,26 +5,36 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Organizations, Organizationroles
 from .serializers import OrganizationSerializer, OrganizationRoleSerializer
 from django.utils import timezone
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10                 
+    page_size_query_param = 'limit'
+    max_page_size = None
 
 
 class OrganizationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        organizations = Organizations.objects.filter(isdelete=False)
+        organizations = Organizations.objects.filter(isdelete=False).order_by('-id')
+        paginator = CustomPagination()
+        result_page = paginator.paginate_queryset(organizations, request)
+        
+        if result_page is not None:
+            serializer = OrganizationSerializer(result_page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
         serializer = OrganizationSerializer(organizations, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = OrganizationSerializer(data=request.data)
+        serializer = OrganizationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save(
-                createdby=request.user,
-                createdat=timezone.now(),
-                isactive=True,
-                isdelete=False,
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            org = serializer.save()  # createdby handled in serializer.create()
+            output_serializer = OrganizationSerializer(org, context={'request': request})
+            print(output_serializer.data)
+            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
