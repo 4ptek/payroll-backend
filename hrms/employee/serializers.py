@@ -24,7 +24,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Designations
-        fields = ['id', 'name']
+        fields = ['id', 'title']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,27 +36,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     branch = BranchSerializer(source='branchid', read_only=True)
     department = DepartmentSerializer(source='departmentid', read_only=True)
     designation = DesignationSerializer(source='designationid', read_only=True)
-
-    organizationid = serializers.PrimaryKeyRelatedField(
-        queryset=Organizations.objects.all(),
-        required=True
-    )
-    branchid = serializers.PrimaryKeyRelatedField(
-        queryset=Branches.objects.all(),
-        allow_null=True,
-        required=False
-    )
-    departmentid = serializers.PrimaryKeyRelatedField(
-        queryset=Departments.objects.all(),
-        allow_null=True,
-        required=False
-    )
-    designationid = serializers.PrimaryKeyRelatedField(
-        queryset=Designations.objects.all(),
-        allow_null=True,
-        required=False
-    )
-
+    
     class Meta:
         model = Employees
         fields = [
