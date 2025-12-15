@@ -6,6 +6,7 @@ from .models import Organizations, Organizationroles
 from .serializers import OrganizationSerializer, OrganizationRoleSerializer
 from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
+from Helpers.ResponseHandler import custom_response
 
 class CustomPagination(PageNumberPagination):
     page_size = 10                 
@@ -23,19 +24,44 @@ class OrganizationListView(APIView):
         
         if result_page is not None:
             serializer = OrganizationSerializer(result_page, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
+            paginated_data = {
+                "count": paginator.page.paginator.count,
+                "next": paginator.get_next_link(),
+                "previous": paginator.get_previous_link(),
+                "results": serializer.data
+            }
+            
+            return custom_response(
+                data=paginated_data, 
+                message="Organization list fetched successfully", 
+                status=status.HTTP_200_OK
+            )
+            
         serializer = OrganizationSerializer(organizations, many=True)
-        return Response(serializer.data)
+        return custom_response(
+            data=serializer.data, 
+            message="Organization list fetched successfully", 
+            status=status.HTTP_200_OK
+        )
 
     def post(self, request):
         serializer = OrganizationSerializer(data=request.data, context={'request': request})
+        
         if serializer.is_valid():
-            org = serializer.save()  # createdby handled in serializer.create()
+            org = serializer.save()
             output_serializer = OrganizationSerializer(org, context={'request': request})
-            print(output_serializer.data)
-            return Response(output_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            return custom_response(
+                data=output_serializer.data, 
+                message="Organization created successfully", 
+                status=status.HTTP_201_CREATED
+            )
+            
+        return custom_response(
+            data=serializer.errors, 
+            message="Validation Error", 
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class OrganizationDetailView(APIView):
@@ -91,31 +117,46 @@ class OrganizationRoleCreateView(APIView):
 
     def post(self, request):
         serializer = OrganizationRoleSerializer(data=request.data)
+        
         if serializer.is_valid():
-            org_id = request.auth.get("org_id")
+            org_id = request.auth.get("org_id") if request.auth else None
             if not org_id:
-                return Response(
-                    {"detail": "Organization not found in token"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                return custom_response(
+                    message="Organization not found in token",
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
             serializer.save(organizationid_id=org_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            return custom_response(
+                data=serializer.data,
+                message="Organization Role created successfully",
+                status=status.HTTP_201_CREATED
+            )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-    def get(self, request):
-        org_id = request.auth.get("org_id")
-        if not org_id:
-            return Response(
-            {"detail": "Organization not found in token"},
-            status=status.HTTP_400_BAD_REQUEST,
+        return custom_response(
+            data=serializer.errors,
+            message="Validation Error",
+            status=status.HTTP_400_BAD_REQUEST
         )
 
+    def get(self, request):
+        org_id = request.auth.get("org_id") if request.auth else None
+        
+        if not org_id:
+            return custom_response(
+                message="Organization not found in token",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         roles = Organizationroles.objects.filter(
-        organizationid_id=org_id
+            organizationid_id=org_id
         ).order_by("id")
 
         serializer = OrganizationRoleSerializer(roles, many=True)
-        return Response(serializer.data)
+        
+        return custom_response(
+            data=serializer.data,
+            message="Organization Roles fetched successfully",
+            status=status.HTTP_200_OK
+        )
