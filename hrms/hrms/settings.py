@@ -106,8 +106,8 @@ DATABASES = {
         'NAME': 'HRMS', 
         'USER': 'postgres',  
         'PASSWORD': 'Waq03158', 
-        'HOST': '192.168.0.95',
-        'PORT': '5432',
+        'HOST': '116.90.108.83',
+        'PORT': '15432',
     }
 }
 
