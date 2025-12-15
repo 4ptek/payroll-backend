@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Organizations
 from .models import Organizationroles
+from designation.models import Designations
 from rest_framework.validators import UniqueValidator  
 from django.utils import timezone
 from branches.serializers import BranchSerializer
@@ -8,23 +9,43 @@ from department.serializers import DepartmentSerializer
 from branches.models import Branches
 from department.models import Departments
 
+
+class DesignationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Designations
+        fields = ['id', 'title', 'organizationid', 'isactive']
+
 class OrganizationRoleSerializer(serializers.ModelSerializer):
+    designation_details = serializers.SerializerMethodField()
+
     class Meta:
         model = Organizationroles
-        fields = ['id', 'name', 'reportto', 'organizationid']
+        fields = ['id', 'name', 'reportto', 'organizationid', 'designation_details']
         read_only_fields = ['organizationid'] 
         extra_kwargs = {
             'name': {'validators': [UniqueValidator(queryset=Organizationroles.objects.all())]}
         }
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.reportto:
-                data['reportto'] = {
+            data['reportto'] = {
                 "id": instance.reportto.id,
                 "name": instance.reportto.name,
             }
         return data
-
+    
+    def get_designation_details(self, obj):
+        try:
+            designation = Designations.objects.get(
+                title=obj.name,
+                organizationid=obj.organizationid,
+                isdelete=False
+            )
+            return DesignationSerializer(designation).data
+        except Designations.DoesNotExist:
+            return None
+    
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Departments
