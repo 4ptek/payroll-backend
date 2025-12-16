@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'designation',
     'department',
     'branches',
-    'user_rbac'
+    'user_rbac',
+    'workflow',
 ]
 
 MIDDLEWARE = [

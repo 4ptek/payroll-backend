@@ -7,7 +7,8 @@ from rest_framework_simplejwt.backends import TokenBackend
 from django.conf import settings
 from django.utils import timezone
 from django.core.mail import send_mail
-
+from organization.serializers import OrganizationSerializer
+from employee.serializers import EmployeeSerializer
 from users.serializers import UserRoleSerializer, UsersSerializer
 from .models import Userroles, Users
 from .utils import check_password, make_password
@@ -44,12 +45,23 @@ class LoginView(APIView):
         # Update last login
         user.lastlogin = timezone.now()
         user.save(update_fields=["lastlogin"])
+        
+        org_data = None
+        if user.organizationid:
+            org_data = OrganizationSerializer(user.organizationid).data
+
+        emp_data = None
+        if user.employeeid:
+            emp_data = EmployeeSerializer(user.employeeid).data
 
         # Create JWT tokens
         refresh = RefreshToken.for_user(user)
         org_id = user.organizationid.id if user.organizationid else None
+        emp_id = user.employeeid_id if user.employeeid else None
         refresh["org_id"] = org_id
+        refresh["employee_id"] = emp_id
         refresh.access_token["org_id"] = org_id
+        refresh.access_token["employee_id"] = emp_id
 
         data = {
             "refresh": str(refresh),
@@ -57,6 +69,8 @@ class LoginView(APIView):
             "user_id": user.id,
             "email": user.email,
             "username": user.username,
+            "organization_details": org_data,
+            "employee_details": emp_data
         }
 
         return custom_response(
