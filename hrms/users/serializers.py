@@ -4,7 +4,9 @@ from .models import Users, Userroles
 from organization.models import Organizations
 from employee.models import Employees
 from .utils import make_password
-from rest_framework.validators import UniqueValidator   
+from rest_framework.validators import UniqueValidator
+from django.utils.crypto import get_random_string
+from .utils import make_password   
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +36,8 @@ class UserRoleSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class UsersSerializer(serializers.ModelSerializer):
+    userpassword = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = Users
         fields = [
@@ -41,30 +45,37 @@ class UsersSerializer(serializers.ModelSerializer):
             'organizationid', 'roleid', 'employeeid', 
             'isactive', 'isdelete', 'userpassword'
         ]
-        extra_kwargs = {
-            'userpassword': {'write_only': True}
-        }
 
     def create(self, validated_data):
         raw_password = validated_data.get('userpassword')
+        
         if raw_password:
             validated_data['userpassword'] = make_password(raw_password)
+        else:
+            random_pass = get_random_string(length=32)
+            validated_data['userpassword'] = make_password(random_pass)
+
         return super().create(validated_data)
-    
     
     def update(self, instance, validated_data):
         raw_password = validated_data.get('userpassword')
         if raw_password:
             validated_data['userpassword'] = make_password(raw_password)
         return super().update(instance, validated_data)
-    
+
     def validate_email(self, value):
-        if value and Users.objects.filter(email=value, isdelete=False).exists():
+        qs = Users.objects.filter(email=value, isdelete=False)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("This email is already used.")
         return value
     
     def validate_username(self, value):
-        if Users.objects.filter(username=value, isdelete=False).exists():
+        qs = Users.objects.filter(username=value, isdelete=False)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("This username is already used.")
         return value
     

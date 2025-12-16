@@ -46,15 +46,36 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'branchid', 'branch',
             'departmentid', 'department',
             'designationid', 'designation',
-            'basicsalary', 'attendancemachineid'
+            'basicsalary', 'attendancemachineid',
+            'employeetype', 'bankaccountnumber', 'picture',
+            'isuser', 'isnew', 'organizationroleid'
         ]
 
     def validate_employeecode(self, value):
-        if Employees.objects.filter(employeecode=value, isdelete=False).exists():
+        qs = Employees.objects.filter(employeecode=value, isdelete=False)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+            
+        if qs.exists():
             raise serializers.ValidationError("This employee code is already used.")
         return value
     
     def validate_cnic(self, value):
-        if value and Employees.objects.filter(cnic=value, isdelete=False).exists():
-            raise serializers.ValidationError("This CNIC is already used.")
+        if value:
+            qs = Employees.objects.filter(cnic=value, isdelete=False)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                raise serializers.ValidationError("This CNIC is already used.")
+        return value
+    
+    def validate_attendancemachineid(self, value):
+        if value:
+            qs = Employees.objects.filter(attendancemachineid=value, isdelete=False)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                raise serializers.ValidationError("This Machine ID is already used.")
         return value

@@ -196,7 +196,6 @@ class LogoutView(APIView):
             status=status.HTTP_200_OK
         )
 
-
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -212,18 +211,33 @@ class UserListView(APIView):
     def post(self, request):
         serializer = UsersSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            reset_token = str(refresh.access_token)
+            activation_url = f"http://localhost:8001/set-password/{reset_token}"
+            try:
+                send_mail(
+                    subject="Welcome! Set Your Password",
+                    message=f"Hi {user.username},\n\nYour account has been created by Admin.\nClick the link below to set your password:\n{activation_url}\n\nThis link is valid for a limited time.",
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+                email_status = "Email sent successfully."
+            except Exception as e:
+                email_status = f"User created but failed to send email: {str(e)}"
+
             return custom_response(
                 data=serializer.data,
-                message="User created successfully",
+                message=f"User created successfully. {email_status}",
                 status=status.HTTP_201_CREATED
             )
+        
         return custom_response(
             data=serializer.errors,
             message="Validation Error",
             status=status.HTTP_400_BAD_REQUEST
         )
-    
 
 class UserDetailView(APIView):
     permission_classes = [IsAuthenticated]
