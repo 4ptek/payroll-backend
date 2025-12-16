@@ -7,5 +7,5 @@ urlpatterns = [
     path('employees/', include('employee.urls')),
     path('organizations/', include('organization.urls')),
     path('user_rbac/', include('user_rbac.urls')),
-    
+    path('workflow/', include('workflow.urls')),
 ]
