@@ -20,7 +20,13 @@ class OrganizationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        org_id = request.query_params.get('organizationid')
+        
         organizations = Organizations.objects.filter(isdelete=False).order_by('-id')
+        
+        if org_id:
+            organizations = organizations.filter(id=org_id)
+        
         paginator = CustomPagination()
         result_page = paginator.paginate_queryset(organizations, request)
         

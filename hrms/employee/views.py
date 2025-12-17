@@ -2,12 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Employees
-from .serializers import EmployeeSerializer
+from .models import Employees, EmployeeOffboarding
+from .serializers import EmployeeSerializer, EmployeeOffboardingSerializer
 from django.utils import timezone
 from workflow.utils import initiate_workflow
 from user_rbac.models import Modules 
-from workflow.utils import initiate_workflow
 from Helpers.ResponseHandler import custom_response
 from django.db.models import Q
 from department.models import Departments
@@ -164,3 +163,103 @@ class EmployeeDetailView(APIView):
         employee.deleteat = timezone.now()
         employee.save()
         return Response({"detail": "Employee deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+class EmployeeOffboardingCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = EmployeeOffboardingSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return custom_response(
+                data=serializer.errors,
+                message="Validation Error",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        initiator = getattr(request.user, 'employeeid', None)
+        if not initiator:
+            return custom_response(
+                data=None,
+                message="User not linked with employee",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        offboarding = serializer.save(
+            requested_by=request.user,
+            status='PENDING'
+        )
+
+        try:
+            module = Modules.objects.filter(
+                modulename__iexact='OFFBOARDING',
+                isactive=True,
+                isdelete=False
+            ).first()
+
+            if not module:
+                return custom_response(
+                    data=None,
+                    message="Offboarding module not found",
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            wf_response = initiate_workflow(
+                record_id=offboarding.id,
+                module_id=module,
+                organization_id=request.user.organizationid,
+                initiator_employee=initiator,  # FK instance ✅
+                user=request.user
+            )
+
+            if not wf_response["success"]:
+                return custom_response(
+                    data=None,
+                    message=wf_response["message"],
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            offboarding.status = 'IN_PROGRESS'
+            offboarding.save(update_fields=['status'])
+
+        except Exception as e:
+            return custom_response(
+                data=None,
+                message=str(e),
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return custom_response(
+            data=EmployeeOffboardingSerializer(offboarding).data,
+            message="Employee offboarding initiated successfully",
+            status=status.HTTP_201_CREATED
+        )
+
+
+class EmployeeOffboardingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = EmployeeOffboarding.objects.filter(is_active=True)
+
+        status_param = request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        serializer = EmployeeOffboardingSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class EmployeeOffboardingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            offboarding = EmployeeOffboarding.objects.get(pk=pk)
+        except EmployeeOffboarding.DoesNotExist:
+            return Response(
+                {"detail": "Offboarding not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = EmployeeOffboardingSerializer(offboarding)
+        return Response(serializer.data)
