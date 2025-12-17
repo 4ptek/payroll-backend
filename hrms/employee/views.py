@@ -9,14 +9,70 @@ from workflow.utils import initiate_workflow
 from user_rbac.models import Modules 
 from workflow.utils import initiate_workflow
 from Helpers.ResponseHandler import custom_response
+from django.db.models import Q
+from department.models import Departments
+from employee.utils import StandardResultsSetPagination
 
 class EmployeeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        employees = Employees.objects.filter(isdelete=False)
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data)
+        queryset = Employees.objects.filter(isdelete=False).order_by('-id')
+
+        org_id = request.query_params.get('organizationid')
+        if org_id:
+            queryset = queryset.filter(organizationid=org_id)
+
+        dept_id = request.query_params.get('departmentid')
+        if dept_id:
+            queryset = queryset.filter(departmentid=dept_id)
+
+        status_param = request.query_params.get('status')
+        if status_param:
+            is_active = status_param.lower() == 'true'
+            queryset = queryset.filter(isactive=is_active)
+            
+        search_query = request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(firstname__icontains=search_query) | 
+                Q(lastname__icontains=search_query) | 
+                Q(cnic__icontains=search_query) | 
+                Q(employeecode__icontains=search_query)
+            )
+        
+        total_employees = queryset.count()
+        active_employees = queryset.filter(isactive=True).count()
+        inactive_employees = queryset.filter(isactive=False).count()
+        
+        if org_id:
+            total_departments = Departments.objects.filter(organizationid=org_id, isdelete=False).count()
+        else:
+            total_departments = Departments.objects.filter(isdelete=False).count()
+
+        paginator = StandardResultsSetPagination()
+        result_page = paginator.paginate_queryset(queryset, request)
+        
+        serializer = EmployeeSerializer(result_page, many=True)
+
+        response_data = {
+            "counts": {
+                "total_employees": total_employees,
+                "active_employees": active_employees,
+                "inactive_employees": inactive_employees,
+                "total_departments": total_departments
+            },
+            "pagination": {
+                "count": paginator.page.paginator.count,
+                "next": paginator.get_next_link(),
+                "previous": paginator.get_previous_link(),
+                "total_pages": paginator.page.paginator.num_pages,
+                "current_page": paginator.page.number
+            },
+            "results": serializer.data
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = EmployeeSerializer(data=request.data)

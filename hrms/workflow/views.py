@@ -8,17 +8,53 @@ from .serializers import WorkflowsSerializer
 from Helpers.ResponseHandler import custom_response
 from django.utils import timezone
 from .utils import update_original_record_status
+from rest_framework.pagination import PageNumberPagination
 
 class WorkflowListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        workflows = Workflows.objects.filter(isactive=True, isdelete=False)
+        workflows = Workflows.objects.filter(isdelete=False).order_by('-id')
 
-        serializer = WorkflowsGetSerializer(workflows, many=True)
+        org_id = request.query_params.get('organizationid')
+        module_id = request.query_params.get('moduleid')
+        is_active_param = request.query_params.get('isactive')
+
+        if org_id:
+            workflows = workflows.filter(organizationid=org_id)
+
+        if module_id:
+            workflows = workflows.filter(moduleid=module_id)
+
+        if is_active_param is not None:
+            if is_active_param.lower() == 'true':
+                workflows = workflows.filter(isactive=True)
+            elif is_active_param.lower() == 'false':
+                workflows = workflows.filter(isactive=False)
+        else:
+            workflows = workflows.filter(isactive=True)
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        
+        if request.query_params.get('page_size'):
+            paginator.page_size = int(request.query_params.get('page_size'))
+
+        result_page = paginator.paginate_queryset(workflows, request)
+
+        serializer = WorkflowsGetSerializer(result_page, many=True)
+
+        pagination_data = {
+            "count": paginator.page.paginator.count,
+            "total_pages": paginator.page.paginator.num_pages,
+            "current_page": paginator.page.number,
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link()
+        }
         
         return custom_response(
             data=serializer.data,
+            pagination=pagination_data,
             message="Workflows fetched successfully",
             status=status.HTTP_200_OK
         )
