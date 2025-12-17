@@ -1,12 +1,13 @@
 from django.shortcuts import render
-from .serializers import WorkflowsSerializer, WorkflowsGetSerializer
+from .serializers import WorkflowsSerializer, WorkflowsGetSerializer, WorkflowActionSerializer
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated
-from .models import Workflows
+from .models import Workflows, Workflowlevel, Workflowrecords, WorkflowHistory
 from .serializers import WorkflowsSerializer
 from Helpers.ResponseHandler import custom_response
 from django.utils import timezone
+from .utils import update_original_record_status
 
 class WorkflowListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -70,3 +71,102 @@ class WorkflowCreateView(APIView):
             message="Validation Error",
             status=status.HTTP_400_BAD_REQUEST
         )
+        
+class WorkflowActionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = WorkflowActionSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return custom_response(data=serializer.errors, message="Invalid Data", status=status.HTTP_400_BAD_REQUEST)
+
+        record_id = serializer.validated_data['record_id']
+        action = serializer.validated_data['action']
+        remarks = serializer.validated_data.get('remarks', '')
+        user = request.user
+
+        try:
+            record = Workflowrecords.objects.get(id=record_id, isactive=True, isdelete=False)
+        except Workflowrecords.DoesNotExist:
+            return custom_response(message="Workflow Record not found", status=status.HTTP_404_NOT_FOUND)
+
+        if record.status != 'Pending':
+            return custom_response(message=f"This request is already {record.status}", status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            current_level_def = Workflowlevel.objects.get(
+                workflowid=record.workflowid,
+                flowlevel=record.currentlevel,
+                isactive=True,
+                isdelete=False
+            )
+        except Workflowlevel.DoesNotExist:
+            return custom_response(message=f"Workflow Level {record.currentlevel} definition missing", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        if current_level_def.approverid and current_level_def.approverid != user:
+             return custom_response(message="You are not authorized to approve this level.", status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            WorkflowHistory.objects.create(
+                workflowrecordid=record,
+                flowlevel=record.currentlevel,
+                actionby=user,                
+                action=action,                
+                remarks=remarks               
+            )
+        except Exception as e:
+            return custom_response(message=f"Error creating history: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # === CASE A: REJECTED ===
+        if action == 'Rejected':
+            record.status = 'Rejected'
+            record.remarks = remarks 
+            record.updatedby = user
+            record.updateat = timezone.now()
+            record.save()
+            
+            update_original_record_status(
+                module_id=record.moduleid.id,
+                record_id=record.recordid,
+                action='Rejected'
+            )
+            
+            return custom_response(message="Request Rejected Successfully", status=status.HTTP_200_OK)
+
+        elif action == 'Approved':
+            
+            if current_level_def.isfinallevel:
+                record.status = 'Approved'
+                record.completed_at = timezone.now()
+                record.remarks = remarks
+                record.updatedby = user
+                record.updateat = timezone.now()
+                record.save()
+                
+                update_original_record_status(
+                    module_id=record.moduleid.id,
+                    record_id=record.recordid,
+                    action='Approved'
+                )
+                
+                return custom_response(message="Workflow Completed & Approved", status=status.HTTP_200_OK)
+            
+            else:
+                next_level = record.currentlevel + 1
+                
+                next_level_exists = Workflowlevel.objects.filter(
+                    workflowid=record.workflowid,
+                    flowlevel=next_level
+                ).exists()
+
+                if not next_level_exists:
+                    return custom_response(message="Configuration Error: Next level not found in database.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                record.currentlevel = next_level
+                record.remarks = f"Pending Level {next_level} Approval"
+                record.updatedby = user
+                record.updateat = timezone.now()
+                record.save()
+
+                return custom_response(message=f"Approved. Moved to Level {next_level}", status=status.HTTP_200_OK)

@@ -26,7 +26,7 @@ class EmployeeListView(APIView):
             employee_instance = serializer.save(
                 createdby=request.user,
                 createdat=timezone.now(),
-                isactive=True,
+                isactive=False,
                 isdelete=False
             )
             try:
