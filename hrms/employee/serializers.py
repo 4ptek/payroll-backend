@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Employees
+from .models import Employees, EmployeeOffboarding
 from organization.models import Organizations
 from branches.models import Branches
 from department.models import Departments
@@ -78,4 +78,41 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
             if qs.exists():
                 raise serializers.ValidationError("This Machine ID is already used.")
+        return value
+    
+class EmployeeOffboardingSerializer(serializers.ModelSerializer):
+
+    employee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeOffboarding
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'offboarding_type',
+            'last_working_day',
+            'reason',
+            'status',
+            'requested_by',
+            'requested_at',
+            'completed_at'
+        ]
+        read_only_fields = ['status', 'requested_by', 'requested_at']
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.firstname} {obj.employee.lastname or ''}"
+
+    def validate_employee(self, value):
+        if not value.isactive:
+            raise serializers.ValidationError("Employee is already inactive.")
+        
+        if EmployeeOffboarding.objects.filter(
+            employee=value,
+            status__in=['PENDING', 'IN_PROGRESS']
+        ).exists():
+            raise serializers.ValidationError(
+                "Offboarding already initiated for this employee."
+            )
+
         return value

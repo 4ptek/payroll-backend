@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-
+from rest_framework import generics
 from user_rbac.service import RbacService
-from .serializers import AssignPermissionSerializer 
+from .serializers import AssignPermissionSerializer , ModuleSerializer
+from user_rbac.models import Modules
 #from hrms.permissions import HasRbacPermission # Custom permission from previous chat
 
 class AssignPermissionsAPI(APIView):
@@ -53,3 +54,22 @@ class GetAllRolesPermissionMatrixAPI(APIView):
         matrix = rbac_service.get_all_roles_permission_matrix()
         
         return Response(matrix, status=status.HTTP_200_OK)
+    
+class ModuleListAPIView(generics.ListAPIView):
+    """
+    API view to retrieve a list of all modules.
+    Filters out deleted modules by default.
+    """
+    serializer_class = ModuleSerializer
+
+    def get_queryset(self):
+        # Good practice: only return modules that aren't marked as deleted
+        return Modules.objects.filter(isdelete=False)
+
+class ModuleDetailAPIView(generics.RetrieveAPIView):
+    """
+    API view to retrieve a single module by its ID.
+    """
+    queryset = Modules.objects.all()
+    serializer_class = ModuleSerializer
+    lookup_field = 'pk'
