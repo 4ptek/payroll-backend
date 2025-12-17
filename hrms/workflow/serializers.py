@@ -73,3 +73,8 @@ class WorkflowsSerializer(serializers.ModelSerializer):
             )
 
         return workflow
+    
+class WorkflowActionSerializer(serializers.Serializer):
+    record_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=['Approved', 'Rejected'])
+    remarks = serializers.CharField(required=False, allow_blank=True)

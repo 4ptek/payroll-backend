@@ -73,3 +73,16 @@ class Workflowrecords(models.Model):
     class Meta:
         managed = False
         db_table = 'workflowrecords'
+        
+class WorkflowHistory(models.Model):
+    workflowrecordid = models.ForeignKey(Workflowrecords, models.DO_NOTHING, db_column='workflowrecordid', related_name='history_logs')
+    flowlevel = models.IntegerField()
+    actionby = models.ForeignKey('users.Users', models.DO_NOTHING, db_column='actionby')
+    action = models.CharField(max_length=50) 
+    remarks = models.TextField(blank=True, null=True)
+    createdat = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False  # Kyunke table SQL se bana rahe hain
+        db_table = 'workflowhistory'        
+        
