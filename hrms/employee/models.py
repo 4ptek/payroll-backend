@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class Employees(models.Model):
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
@@ -32,3 +33,37 @@ class Employees(models.Model):
     class Meta:
         managed = False
         db_table = 'employees'
+        
+        
+class EmployeeOffboarding(models.Model):
+    employee = models.ForeignKey(
+        'Employees',
+        models.DO_NOTHING,
+        db_column='employee_id'
+    )
+
+    offboarding_type = models.CharField(max_length=50)
+    last_working_day = models.DateField()
+    reason = models.TextField(blank=True, null=True)
+
+    status = models.CharField(
+        max_length=30,
+        default='PENDING'
+    )
+    # PENDING | IN_PROGRESS | COMPLETED | REJECTED
+
+    requested_by = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='requested_by',
+        related_name='offboarding_requested_by'
+    )
+
+    requested_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'employee_offboarding'
