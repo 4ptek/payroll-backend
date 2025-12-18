@@ -9,6 +9,9 @@ from Helpers.ResponseHandler import custom_response
 from django.utils import timezone
 from .utils import update_original_record_status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from django.db import connection
+from .utils import dictfetchall, StandardResultsSetPagination 
 
 class WorkflowListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -233,3 +236,165 @@ class WorkflowActionView(APIView):
                 status=status.HTTP_200_OK
             )
 
+class ApproverPendingRequestsView(APIView):
+    # Sirf logged in user access kar sake
+    permission_classes = [IsAuthenticated]
+    
+    # Define Pagination Class
+    pagination_class = StandardResultsSetPagination
+
+    def get(self, request):
+        try:
+            user_id = request.user.id
+            
+            # Filter param get karein
+            filter_wr_id = request.query_params.get('workflow_record_id')
+            
+            # -----------------------------------------------------------
+            # STEP 1: Main Query (Find requests waiting for THIS user)
+            # -----------------------------------------------------------
+            
+            tbl_wr = 'workflowrecords'
+            tbl_wl = 'workflowlevel'
+            tbl_wf = 'workflows'
+            tbl_modules = 'modules'
+            tbl_emp = 'employees'
+            
+            # 1. Base Query Structure (ORDER BY abhi hataya hai)
+            query = f"""
+                SELECT 
+                    wr.id as workflow_record_id,
+                    wr.recordid as record_id,
+                    wr.createdat as initiated_at,
+                    wr.status as workflow_status,
+                    
+                    wf.name as workflow_name,
+                    
+                    mod.modulename as module_name,
+                    
+                    wl.name as step_name,
+                    wl.flowlevel as current_level,
+                    
+                    initiator_emp.firstname as initiator_name,
+                    initiator_emp.employeecode as initiator_code
+
+                FROM {tbl_wr} wr
+                
+                INNER JOIN {tbl_wf} wf ON wr.workflowid = wf.id
+                LEFT JOIN {tbl_modules} mod ON wf.moduleid = mod.id
+                
+                INNER JOIN {tbl_wl} wl ON wr.workflowid = wl.workflowid AND wr.currentlevel = wl.flowlevel
+                
+                LEFT JOIN {tbl_emp} initiator_emp ON wr.initiatorid = initiator_emp.id
+                
+                WHERE wl.approverid = %s
+                -- AND wr.status IN ('PENDING', 'IN_PROGRESS') -- Optional check
+                AND wr.isactive = True
+            """
+            
+            # 2. Parameters List Prepare karein
+            sql_params = [user_id]
+
+            # 3. Dynamic Filter Condition Add karein
+            if filter_wr_id:
+                query += " AND wr.id = %s"
+                sql_params.append(filter_wr_id)
+
+            # 4. Order By Add karein (End mein)
+            query += " ORDER BY wr.createdat DESC"
+            
+            # 5. Execute Query
+            with connection.cursor() as cursor:
+                # Note: Humne [user_id] ki jagah 'sql_params' pass kiya hai
+                cursor.execute(query, sql_params)
+                pending_requests_list = dictfetchall(cursor)
+
+            # -----------------------------------------------------------
+            # STEP 1.5: APPLY PAGINATION (Optimized)
+            # -----------------------------------------------------------
+            
+            paginator = self.pagination_class()
+            paginated_records = paginator.paginate_queryset(pending_requests_list, request, view=self)
+
+            # -----------------------------------------------------------
+            # STEP 2: Fetch Module Specific Details (Context)
+            # -----------------------------------------------------------
+            
+            final_data = []
+            
+            for item in paginated_records:
+                module_name = str(item.get('module_name')).upper()
+                record_id = item.get('record_id')
+                
+                detail_data = {}
+                
+                # --- OFFBOARDING LOGIC ---
+                if module_name == 'OFFBOARDING':
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT 
+                                off.offboarding_type, 
+                                off.last_working_day,
+                                emp.firstname,
+                                emp.lastname,
+                                emp.employeecode,
+                                emp.picture
+                            FROM employee_offboarding off
+                            INNER JOIN employees emp ON off.employee_id = emp.id
+                            WHERE off.id = %s
+                        """, [record_id])
+                        res = dictfetchall(cursor)
+                        if res:
+                            row = res[0]
+                            detail_data = {
+                                "title": f"Offboarding Request - {row['firstname']} {row['lastname']}",
+                                "employee_name": f"{row['firstname']} {row['lastname']}",
+                                "employee_code": row['employeecode'],
+                                "employee_picture": row['picture'],
+                                "meta_info": f"Type: {row['offboarding_type']} | LWD: {row['last_working_day']}"
+                            }
+
+                # --- ONBOARDING LOGIC ---
+                elif module_name == 'ONBOARDING':
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT 
+                                emp.firstname,
+                                emp.lastname,
+                                emp.employeecode,
+                                emp.dateofappointment,
+                                emp.designationid,
+                                emp.departmentid
+                            FROM employees emp
+                            WHERE emp.id = %s
+                        """, [record_id])
+                        res = dictfetchall(cursor)
+                        if res:
+                            row = res[0]
+                            detail_data = {
+                                "title": f"New Hiring - {row['firstname']} {row['lastname']}",
+                                "employee_name": f"{row['firstname']} {row['lastname']}",
+                                "employee_code": "N/A (New)",
+                                "meta_info": f"Joining: {row['dateofappointment']}"
+                            }
+
+                # --- GENERIC FALLBACK ---
+                else:
+                    detail_data = {
+                        "title": f"{module_name} Request #{record_id}",
+                        "meta_info": "No specific details available."
+                    }
+                
+                item['details'] = detail_data
+                final_data.append(item)
+
+            # -----------------------------------------------------------
+            # STEP 3: Return Paginated Response
+            # -----------------------------------------------------------
+            return paginator.get_paginated_response(final_data)
+
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

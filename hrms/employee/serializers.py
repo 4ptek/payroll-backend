@@ -132,6 +132,7 @@ class EmployeeOffboardingSerializer(serializers.ModelSerializer):
 
     employee_name = serializers.SerializerMethodField()
 
+    employee = EmployeeSerializer(read_only=True)
     class Meta:
         model = EmployeeOffboarding
         fields = [
