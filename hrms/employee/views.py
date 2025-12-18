@@ -15,6 +15,7 @@ from django.db import transaction
 from employee.models import EmployeeFinalSettlement
 from django.db import connection
 from django.conf import settings
+from django.db.models import Count
 
 class EmployeeListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -272,19 +273,6 @@ class EmployeeOffboardingCreateView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-class EmployeeOffboardingListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        queryset = EmployeeOffboarding.objects.filter(is_active=True)
-
-        status_param = request.query_params.get('status')
-        if status_param:
-            queryset = queryset.filter(status=status_param)
-
-        serializer = EmployeeOffboardingSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 class EmployeeOffboardingDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -299,7 +287,6 @@ class EmployeeOffboardingDetailView(APIView):
 
         serializer = EmployeeOffboardingSerializer(offboarding)
         return Response(serializer.data)
-    
     
 def dictfetchall(cursor):
     "Return all rows from a cursor as a dict"
@@ -322,6 +309,8 @@ class WorkflowChecklistView(APIView):
             tbl_history = 'workflowhistory'
             tbl_employees = 'employees'
             tbl_users = 'users'
+            tbl_departments = 'departments' 
+            tbl_designations = 'designations'
             
             # --- Dynamic Logic ---
             if module_name == 'OFFBOARDING':
@@ -383,6 +372,7 @@ class WorkflowChecklistView(APIView):
             checklist_query = f"""
                 SELECT 
                     wl.name as step_name,
+                    wl.description as step_description,
                     wl.flowlevel as step_sequence,
                     wl.id as level_id,
                     wl.timelimit,
@@ -391,16 +381,16 @@ class WorkflowChecklistView(APIView):
                     wh.remarks as approver_remarks,
                     wh.createdat as action_date,
                     
-                    -- --- NAME LOGIC ---
-                    -- 1. Pehle check karo History mein koi hai? (Agar approve ho gaya)
-                    -- 2. Agar nahi, to Level ka 'approverid' uthao (Agar pending hai)
-                    
+                    -- LOGIC: Agar action le liya hai to Action User, warna Assigned User
                     COALESCE(action_user.username, assigned_user.username) as action_by_username,
-                    COALESCE(approver_emp.firstname, assigned_emp.firstname) as approver_firstname,
-                    COALESCE(approver_emp.lastname, assigned_emp.lastname) as approver_lastname,
                     
-                    -- Approver ki Picture bhi dikha sakte hain
-                    COALESCE(approver_emp.picture, assigned_emp.picture) as approver_picture,
+                    -- Employee Details Selection (Priority: History > Assigned)
+                    COALESCE(history_emp.firstname, assigned_emp.firstname) as approver_firstname,
+                    COALESCE(history_emp.lastname, assigned_emp.lastname) as approver_lastname,
+                    
+                    -- Designation & Department Selection
+                    COALESCE(history_desig.title, assigned_desig.title) as approver_designation,
+                    COALESCE(history_dept.name, assigned_dept.name) as approver_department,
 
                     CASE 
                         WHEN wh.id IS NOT NULL THEN wh.action 
@@ -410,15 +400,24 @@ class WorkflowChecklistView(APIView):
                 FROM {tbl_levels} wl
                 INNER JOIN {tbl_workflow_rec} wr ON wr.workflowid = wl.workflowid
                 
-                -- JOIN 1: History (Jo action ho chuka hai)
+                -- 1. HISTORY JOIN (Jo action perform ho chuka hai)
                 LEFT JOIN {tbl_history} wh ON wl.flowlevel = wh.flowlevel AND wh.workflowrecordid = wr.id
                 LEFT JOIN {tbl_users} action_user ON wh.actionby = action_user.id
-                LEFT JOIN {tbl_employees} approver_emp ON action_user.employeeid = approver_emp.id
+                LEFT JOIN {tbl_employees} history_emp ON action_user.employeeid = history_emp.id
+                LEFT JOIN {tbl_departments} history_dept ON history_emp.departmentid = history_dept.id
+                LEFT JOIN {tbl_designations} history_desig ON history_emp.designationid = history_desig.id
                 
-                -- JOIN 2: Level Approver (Jo action lega - Pending ke liye)
-                -- Hum sidha 'wl.approverid' use kar rahe hain
-                LEFT JOIN {tbl_users} assigned_user ON wl.approverid = assigned_user.id
-                LEFT JOIN {tbl_employees} assigned_emp ON assigned_user.employeeid = assigned_emp.id
+                LEFT JOIN users assigned_user 
+                    ON wl.approverid = assigned_user.id
+
+                LEFT JOIN employees assigned_emp 
+                    ON assigned_user.employeeid = assigned_emp.id
+
+                LEFT JOIN departments assigned_dept 
+                    ON assigned_emp.departmentid = assigned_dept.id
+
+                LEFT JOIN designations assigned_desig 
+                    ON assigned_emp.designationid = assigned_desig.id
                 
                 WHERE wr.id = %s 
                 AND wl.isactive = True
@@ -467,3 +466,74 @@ class WorkflowChecklistView(APIView):
 
         except Exception as e:
             return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class EmployeeOffboardingListView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get(self, request):
+        # 1. Base Queryset (Select related fixed for ...id fields)
+        # Hum 'employee' ke andar departmentid, branchid, designationid, organizationid ko fetch karenge
+        queryset = EmployeeOffboarding.objects.select_related(
+            'employee', 
+            'employee__departmentid',   # Fixed: department -> departmentid
+            'employee__branchid',       # Fixed: branch -> branchid
+            'employee__designationid',  # Fixed: designation -> designationid
+            'employee__organizationid'  # Added: organizationid for optimization
+        ).filter(is_active=True).order_by('-id') # Added order_by to fix pagination warning
+
+        # 2. Filter by Organization ID
+        org_id = request.query_params.get('organizationid')
+        if org_id:
+            # Fixed: employee__organizationid
+            queryset = queryset.filter(employee__organizationid=org_id)
+        
+        # 3. Search Filter (Fixed field names: firstname, employeecode)
+        search_query = request.query_params.get('search')
+        if search_query:
+            queryset = queryset.filter(
+                Q(employee__firstname__icontains=search_query) |      # Fixed: first_name -> firstname
+                Q(employee__lastname__icontains=search_query) |       # Fixed: last_name -> lastname
+                Q(employee__employeecode__icontains=search_query) |   # Fixed: employee_code -> employeecode
+                Q(employee__departmentid__name__icontains=search_query) # Fixed: department -> departmentid
+            )
+
+        # 4. Counts Calculation
+        stats = queryset.aggregate(
+            total=Count('id'),
+            inprogress=Count('id', filter=Q(status='IN_PROGRESS')),
+            approved=Count('id', filter=Q(status='Approved')),
+            rejected=Count('id', filter=Q(status='Rejected')),
+            completed=Count('id', filter=Q(status='Completed')),
+        )
+
+        # 5. Filter by Status
+        status_param = request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        # 6. Pagination
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        
+        if page is not None:
+            serializer = EmployeeOffboardingSerializer(page, many=True)
+            return Response({
+                'counts': {
+                    'total': stats['total'] or 0,
+                    'inprogress': stats['inprogress'] or 0,
+                    'approved': stats['approved'] or 0,
+                    'rejected': stats['rejected'] or 0,
+                    'completed': stats['completed'] or 0,
+                },
+                'pagination': {
+                    'count': paginator.page.paginator.count,
+                    'next': paginator.get_next_link(),
+                    'previous': paginator.get_previous_link(),
+                    'total_pages': paginator.page.paginator.num_pages
+                },
+                'results': serializer.data
+            }, status=status.HTTP_200_OK)
+
+        serializer = EmployeeOffboardingSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

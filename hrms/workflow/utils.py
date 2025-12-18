@@ -1,6 +1,20 @@
 from django.utils import timezone
 from .models import Workflows, Workflowrecords
 from django.apps import apps
+from rest_framework.pagination import PageNumberPagination
+
+def dictfetchall(cursor):
+    "Return all rows from a cursor as a dict"
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 def initiate_workflow(record_id, module_id, organization_id, initiator_employee, user):
 
