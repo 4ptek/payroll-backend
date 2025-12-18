@@ -28,6 +28,7 @@ class LoginView(APIView):
             )
 
         try:
+            # Step 1: User existence check
             user = Users.objects.get(email=email, isactive=True, isdelete=False)
         except Users.DoesNotExist:
             return custom_response(
@@ -35,9 +36,19 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # Use your custom bcrypt check
+        # Step 2: Employee active status check (New Validation)
+        if user.employeeid:
+            if not user.employeeid.isactive:
+                return custom_response(
+                    data=None, 
+                    message="Your employee account is inactive. Please contact HR.",
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # Step 3: Password check
         if not check_password(password, user.userpassword):
             return custom_response(
+                data=None,
                 message="Invalid credentials",
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -46,6 +57,7 @@ class LoginView(APIView):
         user.lastlogin = timezone.now()
         user.save(update_fields=["lastlogin"])
         
+        # ... baki ka code same rahega ...
         org_data = None
         if user.organizationid:
             org_data = OrganizationSerializer(user.organizationid).data
@@ -58,6 +70,7 @@ class LoginView(APIView):
         refresh = RefreshToken.for_user(user)
         org_id = user.organizationid.id if user.organizationid else None
         emp_id = user.employeeid_id if user.employeeid else None
+        
         refresh["org_id"] = org_id
         refresh["employee_id"] = emp_id
         refresh.access_token["org_id"] = org_id

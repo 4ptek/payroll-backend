@@ -3,14 +3,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Employees, EmployeeOffboarding
-from .serializers import EmployeeSerializer, EmployeeOffboardingSerializer
+from .serializers import EmployeeSerializer, EmployeeOffboardingSerializer, EmployeeOffboardingCreateSerializer
 from django.utils import timezone
 from workflow.utils import initiate_workflow
 from user_rbac.models import Modules 
 from Helpers.ResponseHandler import custom_response
 from django.db.models import Q
 from department.models import Departments
-from employee.utils import StandardResultsSetPagination
+from employee.utils import StandardResultsSetPagination, dictfetchall
+from django.db import transaction
+from employee.models import EmployeeFinalSettlement
+from django.db import connection
+from django.conf import settings
 
 class EmployeeListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -94,12 +98,12 @@ class EmployeeListView(APIView):
                 initiator = getattr(request.user, 'employeeid', None)
                 
                 if not initiator:
-                    print("❌ Error: Logged-in User k paas 'employeeid' nahi hai. Workflow Initiator NULL nahi ho sakta.")
+                    print("Error: Logged-in User k paas 'employeeid' nahi hai. Workflow Initiator NULL nahi ho sakta.")
                     
 
                 # 3. Organization Check
                 org_id = getattr(request.user, 'organizationid', None)
-                print(f"🏢 Organization Check: {org_id}")
+                print(f"Organization Check: {org_id}")
 
                 # 4. Call Function & CAPTURE RESPONSE
                 if initiator and org_id:
@@ -111,10 +115,10 @@ class EmployeeListView(APIView):
                         user=request.user
                     )
                 else:
-                    print("❌ Skipped: Missing Initiator or Organization ID")
+                    print("Skipped: Missing Initiator or Organization ID")
 
             except Exception as e:
-                print(f"❌ Exception in Workflow Block: {str(e)}")
+                print(f"Exception in Workflow Block: {str(e)}")
             
             return custom_response(
                 data=serializer.data,
@@ -167,9 +171,10 @@ class EmployeeDetailView(APIView):
 class EmployeeOffboardingCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
-        serializer = EmployeeOffboardingSerializer(data=request.data)
 
+        serializer = EmployeeOffboardingCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return custom_response(
                 data=serializer.errors,
@@ -185,42 +190,80 @@ class EmployeeOffboardingCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        offboarding = serializer.save(
-            requested_by=request.user,
-            status='PENDING'
-        )
-
         try:
-            module = Modules.objects.filter(
-                modulename__iexact='OFFBOARDING',
-                isactive=True,
-                isdelete=False
-            ).first()
+            settlement_data = serializer.validated_data.pop('settlement')
 
+            offboarding = serializer.save(
+                requested_by=request.user,
+                status='PENDING'
+            )
+            
+            existing_settlement = EmployeeFinalSettlement.objects.filter(
+                    employee=offboarding.employee,
+                    isdelete=False,
+                    status__in=['DRAFT', 'IN_PROGRESS', 'APPROVED']
+                ).exists()
+
+            if existing_settlement:
+                raise Exception("Final settlement already exists for this employee")
+
+            settlement = EmployeeFinalSettlement.objects.create(
+                offboarding=offboarding,
+                employee=offboarding.employee,
+                last_salary=settlement_data['last_salary'],
+                leave_encashment=settlement_data.get('leave_encashment', 0),
+                bonus=settlement_data.get('bonus', 0),
+                other_earnings=settlement_data.get('other_earnings', 0),
+                deductions=settlement_data.get('deductions', 0),
+                remarks=settlement_data.get('remarks', ''),
+                status='PENDING',
+                createdby=request.user
+            )
+
+            module = Modules.objects.filter(modulename__iexact='OFFBOARDING', isactive=True, isdelete=False).first()
             if not module:
-                return custom_response(
-                    data=None,
-                    message="Offboarding module not found",
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                raise Exception("Offboarding module not found")
 
             wf_response = initiate_workflow(
                 record_id=offboarding.id,
                 module_id=module,
                 organization_id=request.user.organizationid,
-                initiator_employee=initiator,  # FK instance ✅
+                initiator_employee=initiator,
                 user=request.user
             )
 
-            if not wf_response["success"]:
-                return custom_response(
-                    data=None,
-                    message=wf_response["message"],
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            if not wf_response.get("success"):
+                raise Exception(wf_response.get("message"))
 
             offboarding.status = 'IN_PROGRESS'
             offboarding.save(update_fields=['status'])
+
+            response_data = EmployeeOffboardingSerializer(offboarding).data
+            
+            earnings = (
+                settlement.last_salary + 
+                settlement.leave_encashment + 
+                settlement.bonus + 
+                settlement.other_earnings
+            )
+            calculated_net_payable = earnings - settlement.deductions
+
+            response_data['settlement'] = {
+                'id': settlement.id,
+                'last_salary': settlement.last_salary,
+                'bonus': settlement.bonus,
+                'deductions': settlement.deductions,
+                'leave_encashment': settlement.leave_encashment,
+                'other_earnings': settlement.other_earnings,
+                'net_payable': calculated_net_payable,
+                'remarks': settlement.remarks,
+            }
+
+            return custom_response(
+                data=response_data,
+                message="Employee offboarding & final settlement initiated successfully",
+                status=status.HTTP_201_CREATED
+            )
 
         except Exception as e:
             return custom_response(
@@ -228,13 +271,6 @@ class EmployeeOffboardingCreateView(APIView):
                 message=str(e),
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-        return custom_response(
-            data=EmployeeOffboardingSerializer(offboarding).data,
-            message="Employee offboarding initiated successfully",
-            status=status.HTTP_201_CREATED
-        )
-
 
 class EmployeeOffboardingListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -263,3 +299,171 @@ class EmployeeOffboardingDetailView(APIView):
 
         serializer = EmployeeOffboardingSerializer(offboarding)
         return Response(serializer.data)
+    
+    
+def dictfetchall(cursor):
+    "Return all rows from a cursor as a dict"
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+    ]
+
+class WorkflowChecklistView(APIView):
+    
+    def get(self, request, record_id, module_name):
+        try:
+            module_name = module_name.upper()
+            
+            # Default tables
+            tbl_workflow_rec = 'workflowrecords'
+            tbl_workflow = 'workflows'
+            tbl_levels = 'workflowlevel'
+            tbl_history = 'workflowhistory'
+            tbl_employees = 'employees'
+            tbl_users = 'users'
+            
+            # --- Dynamic Logic ---
+            if module_name == 'OFFBOARDING':
+                target_app_table = 'employee_offboarding'
+                target_fk_field = 'employee_id'
+                # Offboarding mein Employee table alag se join hoti hai
+                employee_join_logic = f"INNER JOIN {tbl_employees} emp ON app_record.{target_fk_field} = emp.id"
+                
+            elif module_name == 'ONBOARDING':
+                # Onboarding mein 'record_id' hi 'employee_id' hai
+                target_app_table = 'employees'
+                # Employee table already main table hai, dubara join karne ki zaroorat nahi
+                # Hum alias 'app_record' ko hi 'emp' maan lenge query mein
+                employee_join_logic = "" 
+                
+            else:
+                return Response({"message": "Module not supported"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ---------------------------------------------------------
+            # STEP 2: META QUERY (Fetch ONLY the Latest Record)
+            # ---------------------------------------------------------
+            # Note: Maine 'ORDER BY wr.createdat DESC LIMIT 1' add kiya hai
+            # Taake agar multiple records hon to latest wala aaye.
+            
+            # Onboarding ke liye field selection adjust ki hai
+            emp_alias = "app_record" if module_name == 'ONBOARDING' else "emp"
+
+            meta_query = f"""
+                SELECT 
+                    wr.id as workflow_record_id,
+                    wr.status as overall_status,
+                    wr.createdat as initiated_at,
+                    
+                    -- Employee Details (Dynamic Alias)
+                    {emp_alias}.firstname,
+                    {emp_alias}.lastname,
+                    {emp_alias}.employeecode,
+                    {emp_alias}.picture,
+                    {emp_alias}.designationid,
+                    {emp_alias}.departmentid,
+                    
+                    wf.name as workflow_name,
+                    wf.description as workflow_description
+                    
+                FROM {tbl_workflow_rec} wr
+                INNER JOIN {tbl_workflow} wf ON wr.workflowid = wf.id
+                INNER JOIN {target_app_table} app_record ON wr.recordid = app_record.id
+                {employee_join_logic}
+                
+                WHERE wr.recordid = %s 
+                -- Optional: AND wf.modulename ID check
+                ORDER BY wr.createdat DESC 
+                LIMIT 1
+            """
+
+            # ---------------------------------------------------------
+            # STEP 3: CHECKLIST QUERY
+            # ---------------------------------------------------------
+            checklist_query = f"""
+                SELECT 
+                    wl.name as step_name,
+                    wl.flowlevel as step_sequence,
+                    wl.id as level_id,
+                    wl.timelimit,
+                    
+                    wh.action as action_status,
+                    wh.remarks as approver_remarks,
+                    wh.createdat as action_date,
+                    
+                    -- --- NAME LOGIC ---
+                    -- 1. Pehle check karo History mein koi hai? (Agar approve ho gaya)
+                    -- 2. Agar nahi, to Level ka 'approverid' uthao (Agar pending hai)
+                    
+                    COALESCE(action_user.username, assigned_user.username) as action_by_username,
+                    COALESCE(approver_emp.firstname, assigned_emp.firstname) as approver_firstname,
+                    COALESCE(approver_emp.lastname, assigned_emp.lastname) as approver_lastname,
+                    
+                    -- Approver ki Picture bhi dikha sakte hain
+                    COALESCE(approver_emp.picture, assigned_emp.picture) as approver_picture,
+
+                    CASE 
+                        WHEN wh.id IS NOT NULL THEN wh.action 
+                        ELSE 'Pending' 
+                    END as display_status
+
+                FROM {tbl_levels} wl
+                INNER JOIN {tbl_workflow_rec} wr ON wr.workflowid = wl.workflowid
+                
+                -- JOIN 1: History (Jo action ho chuka hai)
+                LEFT JOIN {tbl_history} wh ON wl.flowlevel = wh.flowlevel AND wh.workflowrecordid = wr.id
+                LEFT JOIN {tbl_users} action_user ON wh.actionby = action_user.id
+                LEFT JOIN {tbl_employees} approver_emp ON action_user.employeeid = approver_emp.id
+                
+                -- JOIN 2: Level Approver (Jo action lega - Pending ke liye)
+                -- Hum sidha 'wl.approverid' use kar rahe hain
+                LEFT JOIN {tbl_users} assigned_user ON wl.approverid = assigned_user.id
+                LEFT JOIN {tbl_employees} assigned_emp ON assigned_user.employeeid = assigned_emp.id
+                
+                WHERE wr.id = %s 
+                AND wl.isactive = True
+                ORDER BY wl.flowlevel ASC;
+            """
+
+            with connection.cursor() as cursor:
+                # 1. Fetch Meta Data (Latest Record)
+                cursor.execute(meta_query, [record_id])
+                meta_data_list = dictfetchall(cursor)
+                
+                if not meta_data_list:
+                    return Response({"message": "No workflow record found."}, status=status.HTTP_404_NOT_FOUND)
+                
+                header_info = meta_data_list[0]
+                current_wr_id = header_info['workflow_record_id'] # Get the specific ID (e.g., 3)
+
+                # 2. Fetch Checklist Data using the Workflow Record ID (not Record ID)
+                # Isse ambiguity khatam ho jayegi
+                cursor.execute(checklist_query, [current_wr_id])
+                checklist_data = dictfetchall(cursor)
+
+            response_data = {
+                "record_info": {
+                    "module": module_name,
+                    "record_id": record_id,
+                    "workflow_record_id": header_info.get('workflow_record_id'),
+                    "current_status": header_info.get('overall_status'),
+                    "initiated_at": header_info.get('initiated_at'),
+                },
+                "employee_details": {
+                    "full_name": f"{header_info.get('firstname')} {header_info.get('lastname') or ''}".strip(),
+                    "code": header_info.get('employeecode'),
+                    "picture": header_info.get('picture'),
+                    "designation_id": header_info.get('designationid'),
+                    "department_id": header_info.get('departmentid'),
+                },
+                "workflow_details": {
+                    "name": header_info.get('workflow_name'),
+                    "description": header_info.get('workflow_description'),
+                },
+                "timeline": checklist_data
+            }
+
+            return Response({"status": "success", "data": response_data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
