@@ -67,3 +67,75 @@ class EmployeeOffboarding(models.Model):
     class Meta:
         managed = False
         db_table = 'employee_offboarding'
+        
+class EmployeeFinalSettlement(models.Model):
+    offboarding = models.OneToOneField(
+        'employee.EmployeeOffboarding',
+        models.DO_NOTHING,
+        db_column='offboardingid',
+        related_name='final_settlement'
+    )
+
+    employee = models.ForeignKey(
+        'employee.Employees',
+        models.DO_NOTHING,
+        db_column='employeeid'
+    )
+
+    last_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    leave_encashment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    bonus = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    other_earnings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # --- CHANGE 1: Is field ko Comment out kar dein ---
+    # Kyunki ye DB generated hai, Django ko iske baare mein batane ki zaroorat nahi
+    # net_payable = models.DecimalField(
+    #     max_digits=12,
+    #     decimal_places=2,
+    #     editable=False
+    # )
+
+    status = models.CharField(
+        max_length=30,
+        default='DRAFT'
+    )
+
+    remarks = models.TextField(blank=True, null=True)
+
+    createdby = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='createdby',
+        related_name='finalsettlement_createdby_set'
+    )
+
+    createdat = models.DateTimeField(auto_now_add=True)
+
+    updatedby = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='updatedby',
+        related_name='finalsettlement_updatedby_set',
+        blank=True,
+        null=True
+    )
+
+    updateat = models.DateTimeField(blank=True, null=True)
+
+    isactive = models.BooleanField(default=True)
+    isdelete = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = 'employee_final_settlement'
+
+    def __str__(self):
+        return f"Settlement - Employee {self.employee_id}"
+
+    # --- CHANGE 2: Save method ko simple bana dein ---
+    # Calculation hata dein, kyunki DB ye khud karega
+    def save(self, *args, **kwargs):
+        # self.net_payable = ... (YE LINE DELETE KAR DEIN)
+        super().save(*args, **kwargs)

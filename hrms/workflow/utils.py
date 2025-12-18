@@ -89,7 +89,7 @@ def update_original_record_status(module_id, record_id, action):
                 record.isactive = False
             
             record.save()
-            print(f"✅ Employee {record_id} is now Active!")
+            print(f"Employee {record_id} is now Active!")
 
         elif module_id == 12:
             OffboardingModel = apps.get_model('employee', 'EmployeeOffboarding')
@@ -97,6 +97,12 @@ def update_original_record_status(module_id, record_id, action):
             
             EmployeeModel = apps.get_model('employee', 'Employees')
             employee = EmployeeModel.objects.get(id=offboarding.employee.id)
+
+            # Settlement Model get karein
+            SettlementModel = apps.get_model('employee', 'EmployeeFinalSettlement')
+            
+            # Settlement record dhundein jo is offboarding se linked hai
+            settlement = SettlementModel.objects.filter(offboarding=offboarding).first()
             
             if action == 'Approved':
                 employee.isactive = False
@@ -105,12 +111,22 @@ def update_original_record_status(module_id, record_id, action):
                 offboarding.status = 'Completed'
                 offboarding.completed_at = timezone.now()
                 offboarding.save(update_fields=['status', 'completed_at'])
+
+                if settlement:
+                    settlement.status = 'APPROVED'
+                    settlement.save(update_fields=['status'])
                 
-                print(f"✅ EmployeeOffboarding {record_id} completed. Employee {employee.id} deactivated.")
+                print(f"Offboarding {record_id} completed. Settlement Approved. Employee deactivated.")
+
             elif action == 'Rejected':
                 offboarding.status = 'Rejected'
                 offboarding.save(update_fields=['status'])
-                print(f"❌ EmployeeOffboarding {record_id} rejected.")
+
+                if settlement:
+                    settlement.status = 'REJECTED'
+                    settlement.save(update_fields=['status'])
+
+                print(f"Offboarding {record_id} rejected. Settlement Rejected.")
 
     except Exception as e:
-        print(f"❌ Error updating original record: {str(e)}")        
+        print(f"Error updating original record: {str(e)}")        
