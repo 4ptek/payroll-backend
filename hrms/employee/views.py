@@ -479,7 +479,8 @@ class EmployeeOffboardingListView(APIView):
             'employee__departmentid',   # Fixed: department -> departmentid
             'employee__branchid',       # Fixed: branch -> branchid
             'employee__designationid',  # Fixed: designation -> designationid
-            'employee__organizationid'  # Added: organizationid for optimization
+            'employee__organizationid', # Added: organizationid for optimization
+            'final_settlement'          # Added: final_settlement for optimization
         ).filter(is_active=True).order_by('-id') # Added order_by to fix pagination warning
 
         # 2. Filter by Organization ID

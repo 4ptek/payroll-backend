@@ -97,7 +97,20 @@ class EmployeeFinalSettlementInputSerializer(serializers.Serializer):
     )
     remarks = serializers.CharField(required=False, allow_blank=True)
 
+class EmployeeFinalSettlementSerializer(serializers.ModelSerializer):
+    net_payable = serializers.SerializerMethodField()
 
+    class Meta:
+        model = EmployeeFinalSettlement
+        fields = [
+            'id', 'last_salary', 'leave_encashment', 'bonus', 
+            'other_earnings', 'deductions', 'status', 'net_payable'
+        ]
+
+    def get_net_payable(self, obj):
+        # Python side calculation for display purposes since DB logic is hidden
+        earnings = (obj.last_salary or 0) + (obj.leave_encashment or 0) + (obj.bonus or 0) + (obj.other_earnings or 0)
+        return earnings - (obj.deductions or 0)
     
 class EmployeeOffboardingCreateSerializer(serializers.ModelSerializer):
 
@@ -131,7 +144,7 @@ class EmployeeOffboardingCreateSerializer(serializers.ModelSerializer):
 class EmployeeOffboardingSerializer(serializers.ModelSerializer):
 
     employee_name = serializers.SerializerMethodField()
-
+    final_settlement = EmployeeFinalSettlementSerializer(read_only=True)
     employee = EmployeeSerializer(read_only=True)
     class Meta:
         model = EmployeeOffboarding
@@ -145,7 +158,8 @@ class EmployeeOffboardingSerializer(serializers.ModelSerializer):
             'status',
             'requested_by',
             'requested_at',
-            'completed_at'
+            'completed_at',
+            'final_settlement',
         ]
 
     def get_employee_name(self, obj):
