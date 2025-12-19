@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'branches',
     'user_rbac',
     'workflow',
+    'attendance',
 ]
 
 MIDDLEWARE = [
