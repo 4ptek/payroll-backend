@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'user_rbac',
     'workflow',
     'attendance',
+    'meetingroom',
 ]
 
 MIDDLEWARE = [
