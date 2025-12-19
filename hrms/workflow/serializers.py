@@ -46,9 +46,9 @@ class WorkflowsSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
 
             if qs.exists():
-                raise serializers.ValidationError(
-                    "A workflow already exists for this Module in this Organization."
-                )
+                raise serializers.ValidationError({
+                    "moduleid": "A workflow already exists for this Module in this Organization."
+                })
 
         return data
 
