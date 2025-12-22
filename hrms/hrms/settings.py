@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'workflow',
     'attendance',
     'meetingroom',
+    'leaves',
 ]
 
 MIDDLEWARE = [
