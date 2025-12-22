@@ -10,4 +10,5 @@ urlpatterns = [
     path('workflow/', include('workflow.urls')),
     path('attendance/', include('attendance.urls')),
     path('meeting/', include('meetingroom.urls')),
+    path('leaves/', include('leaves.urls')),
 ]
