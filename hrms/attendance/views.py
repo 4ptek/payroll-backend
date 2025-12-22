@@ -118,7 +118,7 @@ class ProcessAttendanceView(APIView):
         # Check if already processed
         if attendance.status == 'Processed':
              # Error case ke liye standard response ya custom error structure use karein
-             return custom_response(
+             return custom_response_upload(
                  data=None,
                  message="This attendance cycle is already processed.", # Typo fixed here
                  http_status=status.HTTP_400_BAD_REQUEST,
@@ -143,7 +143,7 @@ class ProcessAttendanceView(APIView):
             "processedby": attendance.processedby_id
         }
 
-        return custom_response(
+        return custom_response_upload(
             data=data, 
             message="Attendance processed successfully.", 
             status=status.HTTP_200_OK
