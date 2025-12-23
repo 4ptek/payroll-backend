@@ -18,6 +18,7 @@ from employee.models import Employees
 from datetime import datetime, time, date
 from rest_framework.views import APIView
 from rest_framework import status
+from leaves.models import LeaveRequests
 
 class AttendancePagination(PageNumberPagination):
     page_size = 10

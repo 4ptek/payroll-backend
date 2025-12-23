@@ -4,6 +4,11 @@ from .models import LeavePeriods, LeaveTypes
 from .serializers import LeavePeriodSerializer, LeaveTypeSerializer
 from .utils import StandardPagination, custom_response
 from rest_framework import status
+from .serializers import LeaveBalanceSerializer, LeaveRequestSerializer, StandardResultsSetPagination
+from .models import LeaveBalances, LeaveRequests
+from workflow.utils import initiate_workflow
+from django_filters.rest_framework import DjangoFilterBackend
+from user_rbac.models import Modules
 
 class LeavePeriodListCreateView(generics.ListCreateAPIView):
     queryset = LeavePeriods.objects.all().order_by('-id') 
@@ -67,7 +72,6 @@ class LeavePeriodListCreateView(generics.ListCreateAPIView):
             created_at=timezone.now()
         )
 
-# --- Leave Types (Annual, Sick, etc) ---
 class LeaveTypeListCreateView(generics.ListCreateAPIView):
     # Fallback queryset (get_queryset handles the real logic)
     queryset = LeaveTypes.objects.all().order_by('-id')
@@ -132,3 +136,85 @@ class LeaveTypeListCreateView(generics.ListCreateAPIView):
             created_by=self.request.user, 
             created_at=timezone.now()
         )
+        
+class LeaveBalanceListView(generics.ListAPIView):
+    queryset = LeaveBalances.objects.all().order_by('-id')
+    serializer_class = LeaveBalanceSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    
+    filterset_fields = ['employee']
+        
+class LeaveRequestListCreateView(generics.ListCreateAPIView):
+    queryset = LeaveRequests.objects.all().order_by('-id')
+    serializer_class = LeaveRequestSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    
+    # Enable filtering by employee
+    filterset_fields = ['employee']
+
+    def create(self, request, *args, **kwargs):
+        # 1. Deserialize and Validate Data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # 2. Save the Leave Request (Status default usually 'Pending')
+        # We assign created_by to the logged-in user
+        leave_request = serializer.save(
+            created_by=request.user,
+            created_at=timezone.now(),
+            status="PENDING" 
+        )
+
+        # ---------------------------------------------------
+        # 3. WORKFLOW INTEGRATION
+        # ---------------------------------------------------
+        
+        # NOTE: You need to pass the Module ID for "Leave" either from 
+        # the frontend or hardcode it here if it's constant.
+        module = Modules.objects.filter(
+            modulename__iexact='LeaveRequest',
+            isactive=True, 
+            isdelete=False
+        ).first()
+
+        if not module:
+            # Agar module nahi mila to error return karein
+            return Response({
+                "message": "LeaveRequest module configuration not found.",
+                "data": serializer.data
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Assuming organization_id is attached to the logged-in user or passed in body
+        # Modify this line based on how you store organization info
+        organization_id = self.request.auth.get('org_id')
+        # organization_id = getattr(request.user, 'organization_id', request.data.get('organization_id'))
+
+        # Call your existing function
+        workflow_response = initiate_workflow(
+            record_id=leave_request.id,
+            module_id=module,
+            organization_id=organization_id,
+            initiator_employee=leave_request.employee, # The employee applying
+            user=request.user
+        )
+
+        # 4. Construct Final Response
+        response_data = {
+            "data": serializer.data,
+            "workflow_status": workflow_response
+        }
+
+        if workflow_response['success']:
+             return custom_response(
+                data=response_data, 
+                message="Leave Request Created successfully", 
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return custom_response(
+                data=response_data, 
+                message="Leave Request saved, but workflow failed to start.", 
+                status=status.HTTP_200_OK
+            )
