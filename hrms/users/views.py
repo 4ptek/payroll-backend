@@ -23,6 +23,7 @@ class LoginView(APIView):
 
         if not email or not password:
             return custom_response(
+                data=None,
                 message="Email and password required",
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -32,6 +33,7 @@ class LoginView(APIView):
             user = Users.objects.get(email=email, isactive=True, isdelete=False)
         except Users.DoesNotExist:
             return custom_response(
+                data=None,
                 message="Invalid credentials",
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -92,7 +94,6 @@ class LoginView(APIView):
             status=status.HTTP_200_OK
         )
 
-
 class CustomRefreshView(APIView):
     def post(self, request):
         refresh_token = request.data.get("refresh")
@@ -135,7 +136,6 @@ class CustomRefreshView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -174,7 +174,6 @@ class ForgotPasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
-
 class ResetPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -184,6 +183,7 @@ class ResetPasswordView(APIView):
 
         if not token or not new_password:
             return custom_response(
+                data=None,
                 message="Token and new password required",
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -194,26 +194,29 @@ class ResetPasswordView(APIView):
             user_id = decoded.get("user_id")
         except (TokenError, InvalidToken):
             return custom_response(
+                data=None,
                 message="Invalid or expired token",
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        user = Users.objects.filter(id=user_id, isactive=True, isdelete=False).first()
+        user = Users.objects.filter(id=user_id, isdelete=False).first()
         if not user:
             return custom_response(
+                data=None,
                 message="User not found",
                 status=status.HTTP_404_NOT_FOUND
             )
 
         user.userpassword = make_password(new_password)
         user.lastlogin = timezone.now()
-        user.save(update_fields=["userpassword", "lastlogin"])
+        user.isactive = True  # Activate user upon password reset
+        user.save()
 
         return custom_response(
+            data=None,
             message="Password reset successful",
             status=status.HTTP_200_OK
         )
-
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -328,7 +331,6 @@ class UserDetailView(APIView):
             status=status.HTTP_200_OK 
         )
     
-
 class UserRoleListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -355,8 +357,7 @@ class UserRoleListView(APIView):
             message="Validation Error",
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    
+        
 class UserRoleDetailView(APIView):
     permission_classes = [IsAuthenticated]
 

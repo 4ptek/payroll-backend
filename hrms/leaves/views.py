@@ -67,7 +67,6 @@ class LeavePeriodListCreateView(generics.ListCreateAPIView):
             created_at=timezone.now()
         )
 
-
 # --- Leave Types (Annual, Sick, etc) ---
 class LeaveTypeListCreateView(generics.ListCreateAPIView):
     # Fallback queryset (get_queryset handles the real logic)

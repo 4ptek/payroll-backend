@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 
 # Argument ka naam 'http_status' se change karke 'status' kar diya
-def custom_response(data, message, status, pagination=None, status_str=None): 
+def custom_response(data = None, message=None, status=None, pagination=None, status_str=None): 
     """
     Standardized response wrapper.
     """

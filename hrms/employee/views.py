@@ -16,6 +16,8 @@ from employee.models import EmployeeFinalSettlement
 from django.db import connection
 from django.conf import settings
 from django.db.models import Count
+from leaves.models import LeavePeriods, LeaveTypes, LeaveBalances
+import datetime
 
 class EmployeeListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -82,13 +84,101 @@ class EmployeeListView(APIView):
         serializer = EmployeeSerializer(data=request.data)
         
         if serializer.is_valid():
-            # 1. Employee Save
+            # ---------------------------------------------------
+            # 1. Save Employee
+            # ---------------------------------------------------
             employee_instance = serializer.save(
                 createdby=request.user,
                 createdat=timezone.now(),
                 isactive=False,
                 isdelete=False
             )
+
+            # ---------------------------------------------------
+            # 2. AUTO-ASSIGN LEAVE BALANCES (The New Logic)
+            # ---------------------------------------------------
+            try:
+                # A. Get Org ID and Appointment Date from the SAVED INSTANCE
+                # We use the instance to be sure we get the actual data saved in DB
+                org_id = getattr(employee_instance, 'organizationid', None)
+                
+                # If org_id is missing in instance, try payload or token as fallback
+                if not org_id:
+                    org_id = request.data.get('organizationid') or request.auth.get('org_id')
+
+                # Get Joining Date (Handle lowercase/camelCase differences in model)
+                # Adjust 'dateofappointment' if your model field has underscores (e.g., date_of_appointment)
+                join_date = getattr(employee_instance, 'dateofappointment', None)
+                
+                if org_id and join_date:
+                    # Ensure join_date is a proper Date object (not datetime)
+                    if isinstance(join_date, datetime.datetime):
+                        join_date = join_date.date()
+                    elif isinstance(join_date, str):
+                        join_date = datetime.datetime.strptime(join_date, "%Y-%m-%d").date()
+
+                    # B. Find the Active Fiscal Year for this Org
+                    active_period = LeavePeriods.objects.filter(
+                        organization_id=org_id, 
+                        is_active=True
+                    ).first()
+
+                    if active_period:
+                        # C. Get All Leave Types for this Org
+                        leave_types = LeaveTypes.objects.filter(organization_id=org_id)
+                        
+                        # D. Calculate Remaining Months
+                        period_end = active_period.end_date
+                        
+                        months_remaining = 0
+                        if join_date > period_end:
+                            months_remaining = 0 # Joined after year end
+                        elif join_date < active_period.start_date:
+                            months_remaining = 12 # Joined before year start (Full Quota)
+                        else:
+                            # Logic: (Year Diff * 12) + (Month Diff) + 1 (Include joining month)
+                            months_remaining = (period_end.year - join_date.year) * 12 + (period_end.month - join_date.month) + 1
+
+                        # E. Prepare Balance Entries
+                        balances_to_create = []
+                        for l_type in leave_types:
+                            # Formula: (Default Days / 12) * Remaining Months
+                            allocated_days = l_type.default_days
+                            
+                            if 0 < months_remaining < 12:
+                                allocated_days = (float(l_type.default_days) / 12) * months_remaining
+                            elif months_remaining <= 0:
+                                allocated_days = 0
+                            
+                            balances_to_create.append(
+                                LeaveBalances(
+                                    employee=employee_instance,
+                                    leave_type=l_type,
+                                    leave_period=active_period,
+                                    total_allocated=round(allocated_days, 2), # Round result
+                                    used=0,
+                                    created_at=timezone.now(),
+                                    created_by=request.user
+                                )
+                            )
+                        
+                        # F. Bulk Insert
+                        if balances_to_create:
+                            LeaveBalances.objects.bulk_create(balances_to_create)
+                            print(f"Success: Assigned {len(balances_to_create)} leave balances to {employee_instance.employeecode}")
+                    else:
+                        print(f"Warning: No Active Leave Period found for Org ID {org_id}")
+                else:
+                    print("Warning: Missing OrganizationID or DateOfAppointment for leave assignment.")
+
+            except Exception as e:
+                # Catch errors so Employee Creation DOES NOT fail
+                print(f"Error in Leave Assignment: {str(e)}")
+
+
+            # ---------------------------------------------------
+            # 3. WORKFLOW INITIATION (Your Existing Logic)
+            # ---------------------------------------------------
             try:
                 module_id_val = 5
                 try:
@@ -98,29 +188,27 @@ class EmployeeListView(APIView):
                 
                 initiator = getattr(request.user, 'employeeid', None)
                 
-                if not initiator:
-                    print("Error: Logged-in User k paas 'employeeid' nahi hai. Workflow Initiator NULL nahi ho sakta.")
-                    
+                # Workflow Org ID logic
+                org_id_workflow = request.auth.get('org_id') if request.auth else getattr(request.user, 'organizationid', None)
 
-                # 3. Organization Check
-                org_id = getattr(request.user, 'organizationid', None)
-                print(f"Organization Check: {org_id}")
-
-                # 4. Call Function & CAPTURE RESPONSE
-                if initiator and org_id:
-                    response = initiate_workflow(
+                if initiator and org_id_workflow:
+                    # Call your workflow function
+                    initiate_workflow(
                         record_id=employee_instance.id,
                         module_id=module_instance,
-                        organization_id=org_id,
+                        organization_id=org_id_workflow,
                         initiator_employee=initiator,
                         user=request.user
                     )
                 else:
-                    print("Skipped: Missing Initiator or Organization ID")
+                    print("Skipped Workflow: Missing Initiator or Org ID")
 
             except Exception as e:
                 print(f"Exception in Workflow Block: {str(e)}")
             
+            # ---------------------------------------------------
+            # 4. Return Success
+            # ---------------------------------------------------
             return custom_response(
                 data=serializer.data,
                 message="Employee created successfully",
