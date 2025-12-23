@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'meetingroom',
     'leaves',
     'django_filters',
+    'salary_structure',
 ]
 
 MIDDLEWARE = [
