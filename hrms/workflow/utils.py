@@ -141,6 +141,18 @@ def update_original_record_status(module_id, record_id, action):
                     settlement.save(update_fields=['status'])
 
                 print(f"Offboarding {record_id} rejected. Settlement Rejected.")
+        
+        elif module_id == 62:
+            LeaveRequestsModel = apps.get_model('leaves', 'LeaveRequests')
+            leave_request = LeaveRequestsModel.objects.get(id=record_id)
+            
+            if action == 'Approved':
+                leave_request.status = 'APPROVED'
+            elif action == 'Rejected':
+                leave_request.status = 'REJECTED'
+            
+            leave_request.save(update_fields=['status'])
+            print(f"Leave Request {record_id} status updated to {leave_request.status}.")
 
     except Exception as e:
         print(f"Error updating original record: {str(e)}")        

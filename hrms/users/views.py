@@ -67,7 +67,11 @@ class LoginView(APIView):
         emp_data = None
         if user.employeeid:
             emp_data = EmployeeSerializer(user.employeeid).data
-
+            
+        role_data = None
+        if hasattr(user, 'roleid') and user.roleid:
+            role_data = UserRoleSerializer(user.roleid).data
+            
         # Create JWT tokens
         refresh = RefreshToken.for_user(user)
         org_id = user.organizationid.id if user.organizationid else None
@@ -77,6 +81,10 @@ class LoginView(APIView):
         refresh["employee_id"] = emp_id
         refresh.access_token["org_id"] = org_id
         refresh.access_token["employee_id"] = emp_id
+        
+        if role_data:
+            refresh["role_id"] = role_data.get('id')
+            refresh.access_token["role_id"] = role_data.get('id')
 
         data = {
             "refresh": str(refresh),
@@ -85,7 +93,8 @@ class LoginView(APIView):
             "email": user.email,
             "username": user.username,
             "organization_details": org_data,
-            "employee_details": emp_data
+            "employee_details": emp_data,
+            "role_details": role_data
         }
 
         return custom_response(

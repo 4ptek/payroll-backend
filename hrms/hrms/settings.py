@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'attendance',
     'meetingroom',
     'leaves',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +80,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
 ROOT_URLCONF = 'hrms.urls'
