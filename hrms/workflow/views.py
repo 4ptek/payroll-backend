@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from django.db import connection
 from .utils import dictfetchall, StandardResultsSetPagination 
 
+
 class WorkflowListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -236,84 +237,113 @@ class WorkflowActionView(APIView):
                 status=status.HTTP_200_OK
             )
 
-class ApproverPendingRequestsView(APIView):
+class ApproverAllRequestsView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request):
         try:
             user_id = request.user.id
-            filter_wr_id = request.query_params.get('workflow_record_id')
-            
-            tbl_wr = 'workflowrecords'
-            tbl_wl = 'workflowlevel'
-            tbl_wf = 'workflows'
-            tbl_modules = 'modules'
-            tbl_emp = 'employees'
-            tbl_wh = 'workflowhistory'
-            
-            # 1. Base Query (WITHOUT ORDER BY)
-            query = f"""
-                SELECT 
-                    wr.id as workflow_record_id,
-                    wr.recordid as record_id,
-                    wr.createdat as initiated_at,
-                    wh.remarks as my_remarks,
-                    wh.action as my_action,
-                    
-                    wf.name as workflow_name,
-                    mod.modulename as module_name,
-                    
-                    wl.name as step_name,
-                    wr.currentlevel as record_current_level,
-                    
-                    initiator_emp.firstname as initiator_name,
-                    initiator_emp.employeecode as initiator_code
+            workflow_record_id = request.query_params.get('workflow_record_id')
 
-                FROM {tbl_wh} wh  
-            
-                INNER JOIN {tbl_wr} wr ON wh.workflowrecordid = wr.id
-                INNER JOIN {tbl_wf} wf ON wr.workflowid = wf.id
-                LEFT JOIN {tbl_modules} mod ON wf.moduleid = mod.id
-                LEFT JOIN {tbl_wl} wl ON wr.workflowid = wl.workflowid AND wl.approverid = wh.actionby
-                LEFT JOIN {tbl_emp} initiator_emp ON wr.initiatorid = initiator_emp.id
-                
-                WHERE wh.actionby = %s
-                AND wr.isactive = True
+            # =========================
+            # 🔹 BASE UNION QUERY
+            # =========================
+            final_query = """
+                SELECT *
+                FROM (
+                    -- PENDING
+                    SELECT
+                        wr.id AS workflow_record_id,
+                        wr.recordid,
+                        wr.createdat AS initiated_at,
+                        NULL AS action_at,
+                        'PENDING' AS my_status,
+                        wf.name AS workflow_name,
+                        mod.modulename AS module_name,
+                        emp.firstname AS initiator_firstname,
+                        emp.lastname AS initiator_lastname,
+                        emp.employeecode AS initiator_code,
+                        wr.createdat AS sort_date
+                    FROM workflowrecords wr
+                    INNER JOIN workflowlevel wl
+                        ON wl.workflowid = wr.workflowid
+                        AND wl.flowlevel = wr.currentlevel
+                    INNER JOIN workflows wf ON wf.id = wr.workflowid
+                    LEFT JOIN modules mod ON wf.moduleid = mod.id
+                    LEFT JOIN employees emp ON wr.initiatorid = emp.id
+                    WHERE wl.approverid = %s
+                      AND wr.status = 'Pending'
+                      AND wr.isactive = true
+                      AND wr.isdelete = false
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM workflowhistory wh
+                          WHERE wh.workflowrecordid = wr.id
+                            AND wh.flowlevel = wl.flowlevel
+                            AND wh.actionby = %s
+                      )
+
+                    UNION ALL
+
+                    -- APPROVED / REJECTED
+                    SELECT
+                        wr.id AS workflow_record_id,
+                        wr.recordid,
+                        wr.createdat AS initiated_at,
+                        wh.createdat AS action_at,
+                        UPPER(wh.action) AS my_status,
+                        wf.name AS workflow_name,
+                        mod.modulename AS module_name,
+                        emp.firstname AS initiator_firstname,
+                        emp.lastname AS initiator_lastname,
+                        emp.employeecode AS initiator_code,
+                        wh.createdat AS sort_date
+                    FROM workflowhistory wh
+                    INNER JOIN workflowrecords wr ON wr.id = wh.workflowrecordid
+                    INNER JOIN workflows wf ON wf.id = wr.workflowid
+                    LEFT JOIN modules mod ON wf.moduleid = mod.id
+                    LEFT JOIN employees emp ON wr.initiatorid = emp.id
+                    WHERE wh.actionby = %s
+                      AND wh.action IN ('Approved', 'Rejected')
+                      AND wr.isactive = true
+                      AND wr.isdelete = false
+                ) t
             """
-            
-            sql_params = [user_id]
 
-            # 2. Add Dynamic Filter (BEFORE ORDER BY)
-            if filter_wr_id:
-                query += " AND wr.id = %s"
-                sql_params.append(filter_wr_id)
-            
-            # 3. Add Order By (AT THE VERY END)
-            query += " ORDER BY wh.createdat DESC"
+            params = [user_id, user_id, user_id]
 
-            # Execute
+            # =========================
+            # 🔹 APPLY RECORD ID FILTER OUTSIDE UNION
+            # =========================
+            if workflow_record_id:
+                final_query += " WHERE t.workflow_record_id = %s"
+                params.append(workflow_record_id)
+
+            # =========================
+            # 🔹 ORDER BY SORT_DATE DESC
+            # =========================
+            final_query += " ORDER BY t.sort_date DESC"
+
             with connection.cursor() as cursor:
-                cursor.execute(query, sql_params)
-                pending_requests_list = dictfetchall(cursor)
+                cursor.execute(final_query, params)
+                records = dictfetchall(cursor)
 
-            # --- Pagination & Details Logic (Same as before) ---
-            paginator = self.pagination_class()
-            paginated_records = paginator.paginate_queryset(pending_requests_list, request, view=self)
-
+            # =========================
+            # 🔹 MODULE-SPECIFIC DETAILS
+            # =========================
             final_data = []
-            
-            for item in paginated_records:
-                module_name = str(item.get('module_name')).upper()
-                record_id = item.get('record_id')
-                
-                detail_data = {}
-                
+
+            for item in records:
+                module_name = (item.get('module_name') or '').upper()
+                record_id = item.get('recordid')
+                details = {}
+
                 if module_name == 'OFFBOARDING':
                     with connection.cursor() as cursor:
                         cursor.execute("""
                             SELECT 
-                                off.offboarding_type, 
+                                off.offboarding_type,
                                 off.last_working_day,
                                 emp.firstname,
                                 emp.lastname,
@@ -325,51 +355,50 @@ class ApproverPendingRequestsView(APIView):
                         """, [record_id])
                         res = dictfetchall(cursor)
                         if res:
-                            row = res[0]
-                            detail_data = {
-                                "title": f"Offboarding Request - {row['firstname']} {row['lastname']}",
-                                "employee_name": f"{row['firstname']} {row['lastname']}",
-                                "employee_code": row['employeecode'],
-                                "employee_picture": row['picture'],
-                                "meta_info": f"Type: {row['offboarding_type']} | LWD: {row['last_working_day']}"
+                            r = res[0]
+                            details = {
+                                "title": f"Offboarding - {r['firstname']} {r['lastname']}",
+                                "employee_name": f"{r['firstname']} {r['lastname']}",
+                                "employee_code": r['employeecode'],
+                                "employee_picture": r['picture'],
+                                "meta_info": f"Type: {r['offboarding_type']} | LWD: {r['last_working_day']}"
                             }
 
                 elif module_name == 'ONBOARDING':
                     with connection.cursor() as cursor:
                         cursor.execute("""
-                            SELECT 
-                                emp.firstname,
-                                emp.lastname,
-                                emp.employeecode,
-                                emp.dateofappointment,
-                                emp.designationid,
-                                emp.departmentid
-                            FROM employees emp
-                            WHERE emp.id = %s
+                            SELECT firstname, lastname, dateofappointment, employeecode
+                            FROM employees
+                            WHERE id = %s
                         """, [record_id])
                         res = dictfetchall(cursor)
                         if res:
-                            row = res[0]
-                            detail_data = {
-                                "title": f"New Hiring - {row['firstname']} {row['lastname']}",
-                                "employee_name": f"{row['firstname']} {row['lastname']}",
-                                "employee_code": "N/A (New)",
-                                "meta_info": f"Joining: {row['dateofappointment']}"
+                            r = res[0]
+                            details = {
+                                "title": f"Onboarding - {r['firstname']} {r['lastname']}",
+                                "employee_name": f"{r['firstname']} {r['lastname']}",
+                                "employee_code": r['employeecode'] or "N/A",
+                                "meta_info": f"Joining Date: {r['dateofappointment']}"
                             }
 
                 else:
-                    detail_data = {
+                    details = {
                         "title": f"{module_name} Request #{record_id}",
-                        "meta_info": "No specific details available."
+                        "meta_info": "No additional details available."
                     }
-                
-                item['details'] = detail_data
+
+                item["details"] = details
                 final_data.append(item)
 
-            return paginator.get_paginated_response(final_data)
+            # =========================
+            # 🔹 PAGINATION
+            # =========================
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(final_data, request, view=self)
+            return paginator.get_paginated_response(page)
 
         except Exception as e:
-            return Response({
-                "status": "error",
-                "message": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"status": "error", "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

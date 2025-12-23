@@ -146,7 +146,7 @@ class ProcessAttendanceView(APIView):
         return custom_response_upload(
             data=data, 
             message="Attendance processed successfully.", 
-            status=status.HTTP_200_OK
+            http_status=status.HTTP_200_OK
         )
  
 class AttendanceBulkUploadView(APIView):

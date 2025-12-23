@@ -137,16 +137,19 @@ class OrganizationRoleCreateView(APIView):
                 
             try:
                 with transaction.atomic():
+                    # 1. Save the Role
                     role_instance = serializer.save(organizationid_id=org_id)
                     
+                    # 2. Prepare Designation Data
                     designation_input = {
                         "title": role_instance.name,
                     }
                     
                     desig_serializer = DesignationSerializer(data=designation_input)
                     
+                    # 3. Save the Designation
                     if desig_serializer.is_valid():
-                        desig_instance = desig_serializer.save(
+                        desig_serializer.save(
                             organizationid_id=org_id,
                             createdby=request.user,
                             createdat=timezone.now(),
@@ -162,15 +165,10 @@ class OrganizationRoleCreateView(APIView):
                     message="Error creating Role or Designation",
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
-            response_data = {
-                "role": serializer.data,
-                "designation": desig_serializer.data 
-            }
-
+                
             return custom_response(
-                data=response_data,
-                message="Organization Role and Designation created successfully",
+                data=serializer.data, 
+                message="Organization Role created successfully",
                 status=status.HTTP_201_CREATED
             )
             
