@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'attendance',
     'meetingroom',
     'leaves',
+    'salary_structure',
 ]
 
 MIDDLEWARE = [
