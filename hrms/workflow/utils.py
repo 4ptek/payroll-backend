@@ -2,6 +2,7 @@ from django.utils import timezone
 from .models import Workflows, Workflowrecords
 from django.apps import apps
 from rest_framework.pagination import PageNumberPagination
+from decimal import Decimal
 
 def dictfetchall(cursor):
     "Return all rows from a cursor as a dict"
@@ -112,10 +113,8 @@ def update_original_record_status(module_id, record_id, action):
             EmployeeModel = apps.get_model('employee', 'Employees')
             employee = EmployeeModel.objects.get(id=offboarding.employee.id)
 
-            # Settlement Model get karein
             SettlementModel = apps.get_model('employee', 'EmployeeFinalSettlement')
             
-            # Settlement record dhundein jo is offboarding se linked hai
             settlement = SettlementModel.objects.filter(offboarding=offboarding).first()
             
             if action == 'Approved':
@@ -148,6 +147,27 @@ def update_original_record_status(module_id, record_id, action):
             
             if action == 'Approved':
                 leave_request.status = 'APPROVED'
+                try:
+                    LeaveBalancesModel = apps.get_model('leaves', 'LeaveBalances')
+                    
+                    balance = LeaveBalancesModel.objects.get(
+                        employee=leave_request.employee,
+                        leave_type=leave_request.leave_type,
+                        leave_period=leave_request.leave_period
+                    )
+
+                    days_to_deduct = leave_request.number_of_days 
+
+                    if balance.total_allocated is not None:
+                        balance.total_allocated = balance.total_allocated - Decimal(days_to_deduct)
+                        balance.save()
+                        print(f"Balance updated. Remaining allocated: {balance.total_allocated}")
+                    
+                except LeaveBalancesModel.DoesNotExist:
+                    print(f"Leave Balance record not found for Employee ID: {leave_request.employee.id}")
+                except Exception as e:
+                    print(f"Error updating balance: {str(e)}")
+                
             elif action == 'Rejected':
                 leave_request.status = 'REJECTED'
             
