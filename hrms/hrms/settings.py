@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'leaves',
     'django_filters',
     'salary_structure',
+    'payroll'
 ]
 
 MIDDLEWARE = [

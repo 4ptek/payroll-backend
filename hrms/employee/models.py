@@ -29,6 +29,7 @@ class Employees(models.Model):
     picture = models.TextField(blank=True, null=True)
     isuser = models.BooleanField(blank=True, null=True)
     isnew = models.BooleanField(blank=True, null=True)
+    salary_structure = models.ForeignKey('salary_structure.Salarystructure', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
