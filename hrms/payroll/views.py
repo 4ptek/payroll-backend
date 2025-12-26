@@ -1,8 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .serializers import PayrollSerializer, PayrollRetrieveSerializer, PayrollListSerializer
-from .models import Payroll
+from .serializers import PayrollSerializer, PayrollRetrieveSerializer, PayrollListSerializer,SalarySlipSerializer
+from .models import Payroll, PayrollDetails
 from django.utils import timezone
 from workflow.utils import initiate_workflow
 from user_rbac.models import Modules 
@@ -143,6 +143,46 @@ class PayrollListView(APIView):
                 "data": serializer.data,
                 "status": status.HTTP_200_OK
             }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "message": f"Error: {str(e)}",
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+class EmployeeSalarySlipView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, payroll_id, employee_id):
+        try:
+            org_instance = getattr(request.user, 'organizationid', None)
+
+            if not org_instance:
+                return Response({
+                    "message": "User is not associated with any Organization.",
+                    "status": status.HTTP_403_FORBIDDEN
+                }, status=status.HTTP_403_FORBIDDEN)
+                
+            salary_slip = PayrollDetails.objects.get(
+                payroll__id=payroll_id,              
+                employee__id=employee_id,            
+                payroll__organizationid=org_instance  
+            )
+
+
+            serializer = SalarySlipSerializer(salary_slip)
+
+            return Response({
+                "message": "Salary slip fetched successfully",
+                "data": serializer.data,
+                "status": status.HTTP_200_OK
+            }, status=status.HTTP_200_OK)
+
+        except PayrollDetails.DoesNotExist:
+            return Response({
+                "message": "Salary slip not found for this employee in the given payroll.",
+                "status": status.HTTP_404_NOT_FOUND
+            }, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
             return Response({
