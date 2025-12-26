@@ -104,6 +104,7 @@ class LoginView(APIView):
         )
 
 class CustomRefreshView(APIView):
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         refresh_token = request.data.get("refresh")
 
