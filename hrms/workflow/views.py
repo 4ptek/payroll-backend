@@ -259,7 +259,9 @@ class ApproverAllRequestsView(APIView):
                         wr.id AS workflow_record_id,
                         wr.recordid,
                         wr.createdat AS initiated_at,
-                        NULL AS action_at,
+                        wr.remarks as remarks,
+                        wl.description AS current_level_description,
+                        NULL::timestamptz AS action_at,
                         'PENDING' AS my_status,
                         wf.name AS workflow_name,
                         mod.modulename AS module_name,
@@ -293,6 +295,8 @@ class ApproverAllRequestsView(APIView):
                         wr.id AS workflow_record_id,
                         wr.recordid,
                         wr.createdat AS initiated_at,
+                        wr.remarks as remarks,
+                        wl.description AS current_level_description,
                         wh.createdat AS action_at,
                         UPPER(wh.action) AS my_status,
                         wf.name AS workflow_name,
@@ -304,6 +308,7 @@ class ApproverAllRequestsView(APIView):
                     FROM workflowhistory wh
                     INNER JOIN workflowrecords wr ON wr.id = wh.workflowrecordid
                     INNER JOIN workflows wf ON wf.id = wr.workflowid
+                    INNER JOIN workflowlevel wl ON wl.workflowid = wr.workflowid AND wl.flowlevel = wh.flowlevel
                     LEFT JOIN modules mod ON wf.moduleid = mod.id
                     LEFT JOIN employees emp ON wr.initiatorid = emp.id
                     WHERE wh.actionby = %s

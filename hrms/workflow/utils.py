@@ -62,7 +62,7 @@ def initiate_workflow(record_id, module_id, organization_id, initiator_employee,
 
             currentlevel= 1,
             status='Pending',
-            remarks='Workflow Initiated',
+            remarks='',
 
             createdby=user,
             updatedby=user,
@@ -152,14 +152,14 @@ def update_original_record_status(module_id, record_id, action):
                     
                     balance = LeaveBalancesModel.objects.get(
                         employee=leave_request.employee,
-                        leave_type=leave_request.leave_type,
-                        leave_period=leave_request.leave_period
+                        leave_type=leave_request.leave_type
                     )
 
-                    days_to_deduct = leave_request.number_of_days 
+                    days_to_deduct = leave_request.day_count 
 
                     if balance.total_allocated is not None:
                         balance.total_allocated = balance.total_allocated - Decimal(days_to_deduct)
+                        balance.used = balance.used + Decimal(days_to_deduct)
                         balance.save()
                         print(f"Balance updated. Remaining allocated: {balance.total_allocated}")
                     
