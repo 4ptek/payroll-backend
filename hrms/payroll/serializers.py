@@ -43,10 +43,13 @@ class PayrollSerializer(serializers.ModelSerializer):
                 startdate=start_date, 
                 enddate=end_date, 
                 isactive=True,
-                isdelete=False
+                isdelete=False,
+                status__iexact='Processed'
             ).values_list('id', flat=True)
-            print(f"Found Attendance Batch IDs: {list(attendance_batches)}")
-
+            
+            if not attendance_batches:
+                raise serializers.ValidationError("No processed attendance found for the given period.")
+            
             payroll_details_list = []
 
             for emp in employees:
@@ -198,3 +201,33 @@ class PayrollListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payroll
         fields = ['id', 'periodstart', 'periodend', 'status', 'createdat']
+        
+class SalarySlipSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    employee_code = serializers.CharField(source='employee.employeecode', default='-')
+    department = serializers.CharField(source='employee.departmentid.name', default='-')
+    designation = serializers.CharField(source='employee.designationid.title', default='-')
+    joining_date = serializers.DateField(source='employee.dateofappointment', read_only=True)
+    bank_account = serializers.CharField(source='employee.bankaccountnumber', default='-')
+    period_start = serializers.DateField(source='payroll.periodstart', read_only=True)
+    period_end = serializers.DateField(source='payroll.periodend', read_only=True)
+
+    class Meta:
+        model = PayrollDetails
+        fields = [
+            'id', 
+            'employee_name', 'employee_code', 'department', 'designation', 
+            'joining_date', 'bank_account',
+            'period_start', 'period_end',
+            'basic_salary', 
+            'total_allowances', 
+            'gross_salary', 
+            'total_deductions', 
+            'net_salary',
+            'total_working_days', 'present_days', 'absent_days', 
+            'late_days', 'penalty_days', 'payable_days',
+            'created_at'
+        ]
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.firstname} {obj.employee.lastname or ''}".strip()
