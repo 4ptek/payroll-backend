@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CustomRefreshView, ForgotPasswordView, LoginView,LogoutView, ResetPasswordView, UserListView, UserDetailView
+from .views import CustomRefreshView, ForgotPasswordView, LoginView,LogoutView, ResetPasswordView, UserListView, UserDetailView, UserRoleListView, UserRoleDetailView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
@@ -13,4 +13,9 @@ urlpatterns = [
     #--- USER MANAGEMENT
     path('', UserListView.as_view(), name='user-list-create'),
     path('<int:pk>', UserDetailView.as_view(), name='user-detail'),
+    
+    #-- USER ROLES
+    path('role/', UserRoleListView.as_view(), name='user-role-list-create'),
+    path('role/<int:pk>', UserRoleDetailView.as_view(), name='user-role-detail'),
 ]
+    

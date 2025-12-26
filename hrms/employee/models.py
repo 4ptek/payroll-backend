@@ -1,12 +1,5 @@
-# This is an auto-generated Django model module.
-# You'll have to do the following manually to clean this up:
-#   * Rearrange models' order
-#   * Make sure each model has one field with primary_key=True
-#   * Make sure each ForeignKey and OneToOneField has `on_delete` set to the desired behavior
-#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
-# Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-
+from django.utils import timezone
 
 class Employees(models.Model):
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
@@ -30,7 +23,120 @@ class Employees(models.Model):
     deletedby = models.ForeignKey('users.Users', models.DO_NOTHING, db_column='deletedby', related_name='employees_deletedby_set', blank=True, null=True)
     deleteat = models.DateTimeField(blank=True, null=True)
     attendancemachineid = models.CharField(max_length=550, blank=True, null=True)
+    organizationroleid = models.ForeignKey('organization.Organizationroles', models.DO_NOTHING, db_column='organizationroleid', blank=True, null=True)
+    employeetype = models.TextField(blank=True, null=True)
+    bankaccountnumber = models.TextField(blank=True, null=True)
+    picture = models.TextField(blank=True, null=True)
+    isuser = models.BooleanField(blank=True, null=True)
+    isnew = models.BooleanField(blank=True, null=True)
+    salary_structure = models.ForeignKey('salary_structure.Salarystructure', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'employees'
+        
+        
+class EmployeeOffboarding(models.Model):
+    employee = models.ForeignKey(
+        'Employees',
+        models.DO_NOTHING,
+        db_column='employee_id'
+    )
+
+    offboarding_type = models.CharField(max_length=50)
+    last_working_day = models.DateField()
+    reason = models.TextField(blank=True, null=True)
+
+    status = models.CharField(
+        max_length=30,
+        default='PENDING'
+    )
+    # PENDING | IN_PROGRESS | COMPLETED | REJECTED
+
+    requested_by = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='requested_by',
+        related_name='offboarding_requested_by'
+    )
+
+    requested_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'employee_offboarding'
+        
+class EmployeeFinalSettlement(models.Model):
+    offboarding = models.OneToOneField(
+        'employee.EmployeeOffboarding',
+        models.DO_NOTHING,
+        db_column='offboardingid',
+        related_name='final_settlement'
+    )
+
+    employee = models.ForeignKey(
+        'employee.Employees',
+        models.DO_NOTHING,
+        db_column='employeeid'
+    )
+
+    last_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    leave_encashment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    bonus = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    other_earnings = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # --- CHANGE 1: Is field ko Comment out kar dein ---
+    # Kyunki ye DB generated hai, Django ko iske baare mein batane ki zaroorat nahi
+    # net_payable = models.DecimalField(
+    #     max_digits=12,
+    #     decimal_places=2,
+    #     editable=False
+    # )
+
+    status = models.CharField(
+        max_length=30,
+        default='DRAFT'
+    )
+
+    remarks = models.TextField(blank=True, null=True)
+
+    createdby = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='createdby',
+        related_name='finalsettlement_createdby_set'
+    )
+
+    createdat = models.DateTimeField(auto_now_add=True)
+
+    updatedby = models.ForeignKey(
+        'users.Users',
+        models.DO_NOTHING,
+        db_column='updatedby',
+        related_name='finalsettlement_updatedby_set',
+        blank=True,
+        null=True
+    )
+
+    updateat = models.DateTimeField(blank=True, null=True)
+
+    isactive = models.BooleanField(default=True)
+    isdelete = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False
+        db_table = 'employee_final_settlement'
+
+    def __str__(self):
+        return f"Settlement - Employee {self.employee_id}"
+
+    # --- CHANGE 2: Save method ko simple bana dein ---
+    # Calculation hata dein, kyunki DB ye khud karega
+    def save(self, *args, **kwargs):
+        # self.net_payable = ... (YE LINE DELETE KAR DEIN)
+        super().save(*args, **kwargs)

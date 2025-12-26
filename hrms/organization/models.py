@@ -30,3 +30,13 @@ class Organizations(models.Model):
     class Meta:
         managed = False
         db_table = 'organizations'
+
+
+class Organizationroles(models.Model):
+    name = models.CharField(max_length=550, blank=True, null=True)
+    reportto = models.ForeignKey('self', models.DO_NOTHING, db_column='reportto', blank=True, null=True)
+    organizationid = models.ForeignKey('Organizations', models.DO_NOTHING, db_column='organizationid', blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'organizationroles'
