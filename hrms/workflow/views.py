@@ -12,6 +12,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.db import connection
 from .utils import dictfetchall, StandardResultsSetPagination 
+from payroll.models import Payroll
+from payroll.serializers import PayrollRetrieveSerializer
 
 
 class WorkflowListView(APIView):
@@ -385,7 +387,27 @@ class ApproverAllRequestsView(APIView):
                                 "employee_code": r['employeecode'] or "N/A",
                                 "meta_info": f"Joining Date: {r['dateofappointment']}"
                             }
-
+                
+                elif module_name == 'Payroll Processing' or module_name == 'PAYROLL PROCESSING':
+                    try:
+                        payroll_instance = Payroll.objects.get(id=record_id)
+                        serializer = PayrollRetrieveSerializer(payroll_instance)            
+                        details = serializer.data
+                        p_start = str(payroll_instance.periodstart)
+                        p_end = str(payroll_instance.periodend)
+                        details['title'] = f"Payroll Processing ({p_start} to {p_end})"
+                        details['meta_info'] = f"Status: {payroll_instance.status} | Net: {details.get('total_net', 0)}"
+                        
+                    except Payroll.DoesNotExist:
+                        details = {
+                            "title": f"Payroll Request #{record_id}",
+                            "meta_info": "Record not found"
+                        }
+                    except Exception as e:
+                         details = {
+                            "title": f"Payroll Request #{record_id}",
+                            "meta_info": f"Error: {str(e)}"
+                        }
                 else:
                     details = {
                         "title": f"{module_name} Request #{record_id}",
