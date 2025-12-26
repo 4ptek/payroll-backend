@@ -37,6 +37,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     branch = BranchSerializer(source='branchid', read_only=True)
     department = DepartmentSerializer(source='departmentid', read_only=True)
     designation = DesignationSerializer(source='designationid', read_only=True)
+    org_role_name = serializers.CharField(source='organizationroleid.name', read_only=True, allow_null=True)
     
     class Meta:
         model = Employees
@@ -49,7 +50,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'designationid', 'designation',
             'basicsalary', 'attendancemachineid',
             'employeetype', 'bankaccountnumber', 'picture',
-            'isuser', 'isnew', 'organizationroleid', 'isactive', 'isdelete'
+            'isuser', 'isnew', 'organizationroleid','org_role_name', 'isactive', 'isdelete'
         ]
 
     def validate_employeecode(self, value):
