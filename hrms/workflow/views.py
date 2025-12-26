@@ -408,6 +408,52 @@ class ApproverAllRequestsView(APIView):
                             "title": f"Payroll Request #{record_id}",
                             "meta_info": f"Error: {str(e)}"
                         }
+                elif module_name == 'LEAVEREQUEST':
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute("""
+                                SELECT 
+                                    lt.name as leave_name,
+                                    lt.default_days,
+                                    lb.total_allocated,
+                                    lb.used,
+                                    lr.start_date,
+                                    lr.end_date,
+                                    emp.firstname,
+                                    emp.lastname,
+                                    emp.employeecode
+                                FROM leave_requests lr
+                                INNER JOIN employees emp ON lr.employee_id = emp.id
+                                LEFT JOIN leave_types lt ON lr.leave_type_id = lt.id
+                                LEFT JOIN leave_balances lb ON lb.leave_type_id = lt.id AND lb.employee_id = lr.employee_id
+                                WHERE lr.id = %s
+                            """, [record_id])
+                            
+                            res = dictfetchall(cursor)
+                            if res:
+                                r = res[0]
+                                # Format dates nicely
+                                s_date = r['start_date'].strftime('%Y-%m-%d') if r.get('start_date') else 'N/A'
+                                e_date = r['end_date'].strftime('%Y-%m-%d') if r.get('end_date') else 'N/A'
+                                
+                                details = {
+                                    "title": f"Leave Request - {r['firstname']} {r['lastname']}",
+                                    "employee_name": f"{r['firstname']} {r['lastname']}",
+                                    "employee_code": r['employeecode'], 
+                                    "leave_type": r['leave_name'],
+                                    "total_allocated": r['total_allocated'],
+                                    "used": r['used'],
+                                    "default_days": r['default_days'],
+                                    "start_date": s_date,
+                                    "end_date": e_date,
+                                    # Now using the actual leave name fetched from the JOIN
+                                    "meta_info": f"Type: {r['leave_name']} | From: {s_date} To: {e_date}"
+                                }
+                    except Exception as e:
+                        details = {
+                            "title": f"Leave Request #{record_id}",
+                            "meta_info": f"Error: {str(e)}"
+                        }
                 else:
                     details = {
                         "title": f"{module_name} Request #{record_id}",
