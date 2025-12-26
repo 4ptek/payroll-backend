@@ -62,7 +62,7 @@ def initiate_workflow(record_id, module_id, organization_id, initiator_employee,
 
             currentlevel= 1,
             status='Pending',
-            remarks='Workflow Initiated',
+            remarks='',
 
             createdby=user,
             updatedby=user,
