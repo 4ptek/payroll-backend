@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .serializers import PayrollSerializer, PayrollRetrieveSerializer
+from .serializers import PayrollSerializer, PayrollRetrieveSerializer, PayrollListSerializer
 from .models import Payroll
 from django.utils import timezone
 from workflow.utils import initiate_workflow
@@ -121,3 +121,31 @@ class PayrollProcessView(APIView):
                 print(f"Exception in Workflow Block: {str(e)}")
         
         return Response(response, status=status.HTTP_200_OK)
+
+class PayrollListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            org_instance = getattr(request.user, 'organizationid', None)
+
+            if not org_instance:
+                return Response({
+                    "message": "User is not associated with any Organization.",
+                    "status": status.HTTP_403_FORBIDDEN
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            payrolls = Payroll.objects.filter(organizationid=org_instance).order_by('-createdat')
+            serializer = PayrollListSerializer(payrolls, many=True)
+
+            return Response({
+                "message": "Payrolls fetched successfully",
+                "data": serializer.data,
+                "status": status.HTTP_200_OK
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "message": f"Error: {str(e)}",
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
