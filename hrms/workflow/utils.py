@@ -174,5 +174,17 @@ def update_original_record_status(module_id, record_id, action):
             leave_request.save(update_fields=['status'])
             print(f"Leave Request {record_id} status updated to {leave_request.status}.")
 
+        elif module_id == 8:
+            PayrollModel = apps.get_model('Payroll')
+            payroll = PayrollModel.objects.get(id=record_id)
+            
+            if action == 'Approved':
+                payroll.status = 'APPROVED'
+            elif action == 'Rejected':
+                payroll.status = 'REJECTED'
+            
+            payroll.save(update_fields=['status'])
+            print(f"Payroll {record_id} status updated to {payroll.status}.")
+            
     except Exception as e:
         print(f"Error updating original record: {str(e)}")        
