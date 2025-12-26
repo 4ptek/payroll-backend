@@ -178,8 +178,8 @@ def update_original_record_status(module_id, record_id, action):
             PayrollModel = apps.get_model('Payroll')
             payroll = PayrollModel.objects.get(id=record_id)
             
-            if action == 'Approved':
-                payroll.status = 'APPROVED'
+            if action == 'Processed':
+                payroll.status = 'PROCESSED'
             elif action == 'Rejected':
                 payroll.status = 'REJECTED'
             
