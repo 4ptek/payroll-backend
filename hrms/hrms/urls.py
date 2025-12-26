@@ -12,4 +12,5 @@ urlpatterns = [
     path('meeting/', include('meetingroom.urls')),
     path('leaves/', include('leaves.urls')),
     path('salaryStructure/', include('salary_structure.urls')),
+    path('payroll/', include('payroll.urls')),
 ]
