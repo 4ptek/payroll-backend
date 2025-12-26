@@ -18,6 +18,8 @@ from employee.models import Employees
 from datetime import datetime, time, date
 from rest_framework.views import APIView
 from rest_framework import status
+from leaves.models import LeaveRequests
+from datetime import timedelta
 
 class AttendancePagination(PageNumberPagination):
     page_size = 10
@@ -118,7 +120,7 @@ class ProcessAttendanceView(APIView):
         # Check if already processed
         if attendance.status == 'Processed':
              # Error case ke liye standard response ya custom error structure use karein
-             return custom_response(
+             return custom_response_upload(
                  data=None,
                  message="This attendance cycle is already processed.", # Typo fixed here
                  http_status=status.HTTP_400_BAD_REQUEST,
@@ -143,10 +145,10 @@ class ProcessAttendanceView(APIView):
             "processedby": attendance.processedby_id
         }
 
-        return custom_response(
+        return custom_response_upload(
             data=data, 
             message="Attendance processed successfully.", 
-            status=status.HTTP_200_OK
+            http_status=status.HTTP_200_OK
         )
  
 class AttendanceBulkUploadView(APIView):
@@ -165,9 +167,6 @@ class AttendanceBulkUploadView(APIView):
         # --- VALIDATION 2: STATUS CHECK (Processed/Closed) ---
         try:
             attendance_instance = Attendance.objects.get(id=attendance_id)
-            
-            # Agar status Processed ya Closed hai, to upload rok dein
-            # Aapke status ki exact spelling check kar lein (case-sensitive)
             if attendance_instance.status in ['Processed', 'Closed']:
                 return custom_response_upload(
                     data=None, 
@@ -203,19 +202,50 @@ class AttendanceBulkUploadView(APIView):
         employees_qs = Employees.objects.filter(organizationid=org_id, isactive=True).values('employeecode', 'id')
         employee_map = {str(emp['employeecode']).strip(): emp['id'] for emp in employees_qs if emp['employeecode']}
 
-        # --- VALIDATION 1 PREP: FETCH EXISTING RECORDS ---
-        # Hum pehle se database main check karenge k kin employee+date ka record majood hai
-        # Taake hum decide kar sakein k Update karna hai ya Create.
+        # ============================================================
+        # [NEW PART] OPTIMIZED LEAVE FETCHING LOGIC
+        # ============================================================
+        leave_map = {}
         
+        # Extract all valid dates from file to determine range
+        temp_dates = pd.to_datetime(df['Date'], errors='coerce').dropna().dt.date
+        
+        if not temp_dates.empty:
+            min_date = temp_dates.min()
+            max_date = temp_dates.max()
+            emp_ids_in_file = list(employee_map.values())
+
+            # Fetch Approved Leaves within the file's date range
+            # Note: Using 'iexact' for case-insensitive 'approved' check
+            leaves_qs = LeaveRequests.objects.filter(
+                employee_id__in=emp_ids_in_file,
+                status__iexact='APPROVED', 
+                start_date__lte=max_date,
+                end_date__gte=min_date
+            ).values('employee_id', 'start_date', 'end_date')
+
+            # Expand date ranges into individual dates for fast lookup
+            for leave in leaves_qs:
+                curr_date = leave['start_date']
+                end_date = leave['end_date']
+                emp_id = leave['employee_id']
+                
+                while curr_date <= end_date:
+                    if min_date <= curr_date <= max_date:
+                        leave_map[(emp_id, curr_date)] = 'Leave'
+                    curr_date += timedelta(days=1)
+        # ============================================================
+
+
+        # --- VALIDATION 1 PREP: FETCH EXISTING RECORDS ---
         existing_records_qs = Attendancedetail.objects.filter(attendanceid=attendance_instance)
-        # Map: {(EmployeeID, Date): RecordInstance}
         existing_map = {
             (rec.employeeid_id, rec.attendancedate): rec 
             for rec in existing_records_qs
         }
 
-        records_to_create = [] # New rows
-        records_to_update = [] # Overriding existing rows
+        records_to_create = [] 
+        records_to_update = [] 
         errors = []
 
         # Helper
@@ -264,13 +294,20 @@ class AttendanceBulkUploadView(APIView):
                 else: 
                     final_status, final_hours = calculate_attendance_status(checkin_dt, checkout_dt, policy_instance)
 
-                # --- VALIDATION 1 LOGIC: UPDATE vs CREATE ---
-                
-                # Check karte hain k kya ye Employee+Date combination pehle se map main hai?
+                # ============================================================
+                # [NEW PART] OVERRIDE STATUS IF LEAVE EXISTS
+                # ============================================================
+                if (employee_db_id, attendance_date) in leave_map:
+                    final_status = 'Leave'
+                    # Optional: Reset hours if on leave
+                    # final_hours = 0.0 
+                # ============================================================
+
+                # --- UPDATE vs CREATE LOGIC ---
                 existing_record = existing_map.get((employee_db_id, attendance_date))
 
                 if existing_record:
-                    # UPDATE EXISTING (Override)
+                    # UPDATE EXISTING
                     existing_record.checkin = checkin_dt
                     existing_record.checkout = checkout_dt
                     existing_record.totalhours = final_hours
@@ -296,20 +333,15 @@ class AttendanceBulkUploadView(APIView):
                     )
                     records_to_create.append(obj)
             
-            # 5. Database Commit (Efficiency Step)
-            
-            # Pehle Updates chalayen
+            # 5. Database Commit
             if records_to_update:
                 Attendancedetail.objects.bulk_update(
                     records_to_update, 
                     fields=['checkin', 'checkout', 'totalhours', 'status', 'remarks', 'updatedby', 'updateat']
                 )
 
-            # Phir Creates chalayen
             if records_to_create:
                 Attendancedetail.objects.bulk_create(records_to_create)
-
-            total_processed = len(records_to_create) + len(records_to_update)
 
             # Response Logic
             msg_prefix = ""

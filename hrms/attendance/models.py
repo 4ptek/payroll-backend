@@ -79,6 +79,7 @@ class Attendance(models.Model):
     deletedby = models.ForeignKey('users.Users', models.DO_NOTHING, db_column='deletedby', related_name='attendance_deletedby_set', blank=True, null=True)
     deleteat = models.DateTimeField(blank=True, null=True)
     attendancepolicyid = models.ForeignKey(Attendancepolicies, models.DO_NOTHING, db_column='attendancepolicyid', blank=True, null=True)
+    totaldays = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False

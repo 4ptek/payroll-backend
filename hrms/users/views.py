@@ -23,6 +23,7 @@ class LoginView(APIView):
 
         if not email or not password:
             return custom_response(
+                data=None,
                 message="Email and password required",
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -32,6 +33,7 @@ class LoginView(APIView):
             user = Users.objects.get(email=email, isactive=True, isdelete=False)
         except Users.DoesNotExist:
             return custom_response(
+                data=None,
                 message="Invalid credentials",
                 status=status.HTTP_401_UNAUTHORIZED
             )
@@ -65,7 +67,11 @@ class LoginView(APIView):
         emp_data = None
         if user.employeeid:
             emp_data = EmployeeSerializer(user.employeeid).data
-
+            
+        role_data = None
+        if hasattr(user, 'roleid') and user.roleid:
+            role_data = UserRoleSerializer(user.roleid).data
+            
         # Create JWT tokens
         refresh = RefreshToken.for_user(user)
         org_id = user.organizationid.id if user.organizationid else None
@@ -75,6 +81,10 @@ class LoginView(APIView):
         refresh["employee_id"] = emp_id
         refresh.access_token["org_id"] = org_id
         refresh.access_token["employee_id"] = emp_id
+        
+        if role_data:
+            refresh["role_id"] = role_data.get('id')
+            refresh.access_token["role_id"] = role_data.get('id')
 
         data = {
             "refresh": str(refresh),
@@ -83,7 +93,8 @@ class LoginView(APIView):
             "email": user.email,
             "username": user.username,
             "organization_details": org_data,
-            "employee_details": emp_data
+            "employee_details": emp_data,
+            "role_details": role_data
         }
 
         return custom_response(
@@ -91,7 +102,6 @@ class LoginView(APIView):
             message="Login successful",
             status=status.HTTP_200_OK
         )
-
 
 class CustomRefreshView(APIView):
     def post(self, request):
@@ -135,7 +145,6 @@ class CustomRefreshView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -174,7 +183,6 @@ class ForgotPasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
-
 class ResetPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -184,6 +192,7 @@ class ResetPasswordView(APIView):
 
         if not token or not new_password:
             return custom_response(
+                data=None,
                 message="Token and new password required",
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -194,26 +203,29 @@ class ResetPasswordView(APIView):
             user_id = decoded.get("user_id")
         except (TokenError, InvalidToken):
             return custom_response(
+                data=None,
                 message="Invalid or expired token",
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        user = Users.objects.filter(id=user_id, isactive=True, isdelete=False).first()
+        user = Users.objects.filter(id=user_id, isdelete=False).first()
         if not user:
             return custom_response(
+                data=None,
                 message="User not found",
                 status=status.HTTP_404_NOT_FOUND
             )
 
         user.userpassword = make_password(new_password)
         user.lastlogin = timezone.now()
-        user.save(update_fields=["userpassword", "lastlogin"])
+        user.isactive = True  # Activate user upon password reset
+        user.save()
 
         return custom_response(
+            data=None,
             message="Password reset successful",
             status=status.HTTP_200_OK
         )
-
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -328,7 +340,6 @@ class UserDetailView(APIView):
             status=status.HTTP_200_OK 
         )
     
-
 class UserRoleListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -355,8 +366,7 @@ class UserRoleListView(APIView):
             message="Validation Error",
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    
+        
 class UserRoleDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
