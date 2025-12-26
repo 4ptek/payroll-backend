@@ -193,3 +193,8 @@ class PayrollRetrieveSerializer(serializers.ModelSerializer):
         ).all()
         
         return PayrollRecordSerializer(details, many=True).data
+    
+class PayrollListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payroll
+        fields = ['id', 'periodstart', 'periodend', 'status', 'createdat']
