@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AttendancePolicyListCreateView, AttendanceListCreateView, ProcessAttendanceView, AttendanceBulkUploadView, AttendanceDashboardView
+from .views import AttendancePolicyListCreateView, AttendanceListCreateView, ProcessAttendanceView, AttendanceBulkUploadView, AttendanceDashboardView, EmployeeMonthlyAttendanceView
 
 urlpatterns = [
     # Endpoint: /api/attendance/
@@ -9,4 +9,6 @@ urlpatterns = [
     path('<int:pk>/process/', ProcessAttendanceView.as_view(), name='attendance-process'),
     path('upload-excel/', AttendanceBulkUploadView.as_view(), name='attendance-upload-excel'),
     path('dashboard/', AttendanceDashboardView.as_view(), name='attendance-dashboard'),
+    path('monthly-report/', EmployeeMonthlyAttendanceView.as_view(), name='monthly-attendance-report'),
 ]
+

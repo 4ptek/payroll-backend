@@ -20,6 +20,8 @@ from rest_framework.views import APIView
 from rest_framework import status
 from leaves.models import LeaveRequests
 from datetime import timedelta
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 class AttendancePagination(PageNumberPagination):
     page_size = 10
@@ -538,3 +540,38 @@ class AttendanceDashboardView(APIView):
             "report": report_list  # <--- Summary View
         }
         return custom_response(response_data, f"Monthly summary for {month_str}.", status.HTTP_200_OK)
+        
+class EmployeeMonthlyAttendanceView(generics.ListAPIView):
+    serializer_class = AttendanceDetailReportSerializer
+
+    def get_queryset(self):
+        employee_id = self.request.query_params.get('employee_id')
+        month = self.request.query_params.get('month')
+        year = self.request.query_params.get('year')
+
+        if not all([employee_id, month, year]):
+             raise ValidationError({"detail": "Missing parameters"})
+
+        return Attendancedetail.objects.filter(
+            employeeid=employee_id,
+            attendancedate__month=month,
+            attendancedate__year=year
+        ).order_by('attendancedate')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        
+        # Calculate summary stats (Optional)
+        total_presents = queryset.filter(status='Present').count()
+        total_absents = queryset.filter(status='Absent').count()
+        total_lates = queryset.filter(status='Late').count()
+
+        return Response({
+            "summary": {
+                "presents": total_presents,
+                "absents": total_absents,
+                "lates": total_lates
+            },
+            "records": serializer.data
+        })

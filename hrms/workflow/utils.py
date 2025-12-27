@@ -175,10 +175,10 @@ def update_original_record_status(module_id, record_id, action):
             print(f"Leave Request {record_id} status updated to {leave_request.status}.")
 
         elif module_id == 8:
-            PayrollModel = apps.get_model('Payroll')
+            PayrollModel = apps.get_model('payroll', 'Payroll')
             payroll = PayrollModel.objects.get(id=record_id)
             
-            if action == 'Processed':
+            if action == 'Approved':
                 payroll.status = 'PROCESSED'
             elif action == 'Rejected':
                 payroll.status = 'REJECTED'
