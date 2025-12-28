@@ -15,3 +15,11 @@ class BranchSerializer(serializers.ModelSerializer):
         # Sirf wo departments layen jo delete nahi huay
         qs = Departments.objects.filter(branchid=obj.id, isdelete=False)
         return DepartmentSerializer(qs, many=True).data
+
+
+class BranchCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branches
+        # We include all fields, but some will be read_only because the backend handles them
+        fields = '__all__'
+        read_only_fields = ('createdby', 'createdat', 'updatedby', 'updateat', 'deletedby', 'deleteat', 'isdelete')
