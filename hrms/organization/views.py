@@ -127,7 +127,7 @@ class OrganizationRoleCreateView(APIView):
         serializer = OrganizationRoleSerializer(data=request.data)
         
         if serializer.is_valid():
-            org_id = request.auth.get("org_id") if request.auth else None
+            org_id = request.data.get("organizationid")
             
             if not org_id:
                 return custom_response(
@@ -179,7 +179,7 @@ class OrganizationRoleCreateView(APIView):
         )
         
     def get(self, request):
-        org_id = request.auth.get("org_id") if request.auth else None
+        org_id = request.query_params.get("organizationid")
         
         if not org_id:
             return custom_response(
