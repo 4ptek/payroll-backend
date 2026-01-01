@@ -1,14 +1,23 @@
 from rest_framework import serializers
 from .models import Workflows, Workflowlevel, Workflowrecords
 from django.utils import timezone
+from employee.serializers import EmployeeSerializer
+from users.models import Users
 
+class WorkflowApproverSerializer(serializers.ModelSerializer):
+    employee_details = EmployeeSerializer(source='employeeid', read_only=True)
+
+    class Meta:
+        model = Users
+        fields = ['id', 'username', 'email', 'employee_details']
 
 class WorkflowLevelSerializer(serializers.ModelSerializer):
+    approver_details = WorkflowApproverSerializer(source='approverid', read_only=True)
     class Meta:
         model = Workflowlevel
         fields = [
             'flowlevel', 'approverid', 'autoapprove', 'timelimit', 
-            'isfinallevel', 'isparallel', 'name', 'description', 'employeeid'
+            'isfinallevel', 'isparallel', 'name', 'description', 'employeeid','approverid','approver_details'
         ]
         
 class WorkflowsGetSerializer(serializers.ModelSerializer):

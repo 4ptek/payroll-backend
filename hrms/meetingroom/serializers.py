@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Rooms, Bookings
 from django.db.models import Q
+from organization.serializers import OrganizationSerializer
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +30,16 @@ class RoomSerializer(serializers.ModelSerializer):
             )
             
         return data
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        
+        response['organizationid'] = {
+            "id": instance.organizationid.id,
+            "name": instance.organizationid.name
+            #ADD detail as per needed
+        }
 
+        return response
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,3 +75,16 @@ class BookingSerializer(serializers.ModelSerializer):
             )
 
         return data
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.room:
+            response['room'] = RoomSerializer(instance.room).data
+        # if instance.organizationid:
+        #     response['organizationid'] = OrganizationSerializer(instance.organizationid).data
+            response['organizationid'] = {
+                "id": instance.organizationid.id,
+                "name": instance.organizationid.name
+                #ADD detail as per needed
+            }
+
+        return response

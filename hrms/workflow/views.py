@@ -20,8 +20,16 @@ class WorkflowListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        workflows = Workflows.objects.filter(isdelete=False).order_by('-id')
-
+        workflows = Workflows.objects.filter(isdelete=False).prefetch_related(
+            'workflowlevel_set',                           
+            'workflowlevel_set__approverid',                
+            'workflowlevel_set__approverid__employeeid',    
+            'workflowlevel_set__approverid__employeeid__departmentid',
+            'workflowlevel_set__approverid__employeeid__designationid',
+            'workflowlevel_set__approverid__employeeid__branchid',
+            'workflowlevel_set__approverid__employeeid__organizationid',
+        ).order_by('-id')
+        
         org_id = request.query_params.get('organizationid')
         module_id = request.query_params.get('moduleid')
         is_active_param = request.query_params.get('isactive')
