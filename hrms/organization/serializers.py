@@ -174,26 +174,5 @@ class OrganizationSerializer(serializers.ModelSerializer):
         instance.updatedby = request.user if request else None
         instance.updateat = timezone.now()
         instance.save()
-
-        for branch_item in branches_data:
-            departments_data = branch_item.pop('departments', [])
-            branch = Branches.objects.create(
-                organizationid=instance,
-                **branch_item,
-                createdby=request.user if request else None,
-                createdat=timezone.now(),
-                isactive=True,
-                isdelete=False
-            )
-            for dept_item in departments_data:
-                Departments.objects.create(
-                    organizationid=instance,
-                    branchid=branch,
-                    **dept_item,
-                    createdby=request.user if request else None,
-                    createdat=timezone.now(),
-                    isactive=True,
-                    isdelete=False
-                )
-
+        
         return instance

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Organizations, Organizationroles
+from designation.models import Designations
 from .serializers import OrganizationSerializer, OrganizationRoleSerializer
 from designation.serializers import DesignationSerializer
 from django.utils import timezone
@@ -197,4 +198,63 @@ class OrganizationRoleCreateView(APIView):
             data=serializer.data,
             message="Organization Roles fetched successfully",
             status=status.HTTP_200_OK
+        )
+
+class OrganizationRoleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Organizationroles.objects.get(pk=pk)
+        except Organizationroles.DoesNotExist:
+            return None
+
+    def patch(self, request, pk):
+        role_instance = self.get_object(pk)
+        
+        if not role_instance:
+            return custom_response(
+                message="Organization Role not found",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        new_name = request.data.get('name')
+        designation_id = request.data.get('designation_id') 
+        serializer = OrganizationRoleSerializer(role_instance, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            try:
+                with transaction.atomic():
+                    serializer.save(updatedby=request.user, updateat=timezone.now())
+                    
+                    if new_name and designation_id:
+                        try:
+                            designation = Designations.objects.get(id=designation_id)
+
+                            if designation.title != new_name:
+                                designation.title = new_name
+                                designation.updatedby = request.user
+                                designation.updateat = timezone.now()
+                                designation.save()
+                                
+                        except Designations.DoesNotExist:
+                            raise Exception(f"Designation with ID {designation_id} not found.")
+
+                return custom_response(
+                    data=serializer.data,
+                    message="Updated successfully",
+                    status=status.HTTP_200_OK
+                )
+
+            except Exception as e:
+                return custom_response(
+                    data=str(e),
+                    message="Error updating record",
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        return custom_response(
+            data=serializer.errors,
+            message="Validation Error",
+            status=status.HTTP_400_BAD_REQUEST
         )

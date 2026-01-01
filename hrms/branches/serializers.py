@@ -20,6 +20,10 @@ class BranchSerializer(serializers.ModelSerializer):
 class BranchCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branches
-        # We include all fields, but some will be read_only because the backend handles them
         fields = '__all__'
         read_only_fields = ('createdby', 'createdat', 'updatedby', 'updateat', 'deletedby', 'deleteat', 'isdelete')
+    
+class BranchUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branches
+        fields = ['name', 'address', 'city', 'isactive']

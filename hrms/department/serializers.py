@@ -13,3 +13,8 @@ class DepartmentCreateSerializer(serializers.ModelSerializer):
         model = Departments
         fields = '__all__'
         read_only_fields = ('createdby', 'createdat', 'updatedby', 'updateat', 'deletedby', 'deleteat', 'isdelete')
+
+class DepartmentUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departments
+        fields = ['name']
