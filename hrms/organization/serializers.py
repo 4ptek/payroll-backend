@@ -21,10 +21,28 @@ class OrganizationRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organizationroles
         fields = ['id', 'name', 'reportto', 'organizationid', 'designation_details']
-        read_only_fields = ['organizationid'] 
-        extra_kwargs = {
-            'name': {'validators': [UniqueValidator(queryset=Organizationroles.objects.all())]}
-        }
+        read_only_fields = ['organizationid']
+        
+    def validate(self, data):
+        name = data.get('name')
+        
+        organization_id = self.initial_data.get('organizationid')
+        
+        if name and organization_id:
+            queryset = Organizationroles.objects.filter(
+                organizationid=organization_id, 
+                name__iexact=name
+            )
+            
+            if self.instance:
+                queryset = queryset.exclude(pk=self.instance.pk)
+
+            if queryset.exists():
+                raise serializers.ValidationError(
+                    {"name": "A role with this name already exists in this organization."}
+                )
+        
+        return data
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
