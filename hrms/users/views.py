@@ -254,7 +254,7 @@ class UserListView(APIView):
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
             reset_token = str(refresh.access_token)
-            activation_url = f"http://localhost:8001/set-password/{reset_token}"
+            activation_url = f"http://116.90.108.83:8087/set-password/{reset_token}"
             try:
                 send_mail(
                     subject="Welcome! Set Your Password",
