@@ -14,6 +14,7 @@ from django.db import connection
 from .utils import dictfetchall, StandardResultsSetPagination 
 from payroll.models import Payroll
 from payroll.serializers import PayrollRetrieveSerializer
+from django.db import transaction
 from .utils import send_workflow_notification
 from users.models import Users
 
@@ -105,8 +106,6 @@ class WorkflowCreateView(APIView):
             
             serializer.save(
                 createdby=request.user,
-                updatedby=request.user,
-                deletedby=request.user,
                 createdat=timezone.now(),
                 isactive=True,
                 isdelete=False
@@ -117,6 +116,48 @@ class WorkflowCreateView(APIView):
                 message="Workflow created successfully",
                 status=status.HTTP_201_CREATED
             )
+        
+        return custom_response(
+            data=serializer.errors,
+            message="Validation Error",
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+class WorkflowUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            workflow_instance = Workflows.objects.get(pk=pk, isdelete=False)
+        except Workflows.DoesNotExist:
+            return custom_response(
+                message="Workflow not found",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = WorkflowsSerializer(
+            workflow_instance, 
+            data=request.data, 
+            context={'request': request}, 
+            partial=True 
+        )
+
+        if serializer.is_valid():
+            try:
+                with transaction.atomic():
+                    serializer.save()
+                
+                return custom_response(
+                    data=serializer.data,
+                    message="Workflow updated successfully",
+                    status=status.HTTP_200_OK
+                )
+            except Exception as e:
+                return custom_response(
+                    data=str(e),
+                    message="Error updating workflow details",
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         return custom_response(
             data=serializer.errors,
