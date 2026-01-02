@@ -79,12 +79,11 @@ class BookingSerializer(serializers.ModelSerializer):
         response = super().to_representation(instance)
         if instance.room:
             response['room'] = RoomSerializer(instance.room).data
-        # if instance.organizationid:
-        #     response['organizationid'] = OrganizationSerializer(instance.organizationid).data
-            response['organizationid'] = {
-                "id": instance.organizationid.id,
-                "name": instance.organizationid.name
+            
+        response['organizationid'] = {
+            "id": instance.organizationid.id,
+            "name": instance.organizationid.name
                 #ADD detail as per needed
-            }
+        }
 
         return response
