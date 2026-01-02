@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import WorkflowCreateView, WorkflowListView, WorkflowDetailView, WorkflowActionView, ApproverAllRequestsView
+from .views import WorkflowCreateView, WorkflowListView, WorkflowDetailView, WorkflowActionView, ApproverAllRequestsView, WorkflowUpdateView
 
 urlpatterns = [
     path('create/', WorkflowCreateView.as_view(), name='create-workflow'),
@@ -7,4 +7,5 @@ urlpatterns = [
     path('list/<int:pk>/', WorkflowDetailView.as_view(), name='detail-workflow'),
     path('action/', WorkflowActionView.as_view(), name='workflow-action'),
     path('workflow/approvals/', ApproverAllRequestsView.as_view(), name='pending-approvals'),
+    path('update/<int:pk>/', WorkflowUpdateView.as_view(), name='workflow-update'),
 ]

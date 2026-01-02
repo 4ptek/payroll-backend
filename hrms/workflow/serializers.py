@@ -13,10 +13,11 @@ class WorkflowApproverSerializer(serializers.ModelSerializer):
 
 class WorkflowLevelSerializer(serializers.ModelSerializer):
     approver_details = WorkflowApproverSerializer(source='approverid', read_only=True)
+    id = serializers.IntegerField(required=False)
     class Meta:
         model = Workflowlevel
         fields = [
-            'flowlevel', 'approverid', 'autoapprove', 'timelimit', 
+            'id','flowlevel', 'approverid', 'autoapprove', 'timelimit', 
             'isfinallevel', 'isparallel', 'name', 'description', 'employeeid','approverid','approver_details'
         ]
         
@@ -82,6 +83,73 @@ class WorkflowsSerializer(serializers.ModelSerializer):
             )
 
         return workflow
+    
+    def update(self, instance, validated_data):
+        levels_data = validated_data.pop('levels', [])
+
+        # 1. Handle Workflow
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.moduleid = validated_data.get('moduleid', instance.moduleid)
+        instance.isactive = validated_data.get('isactive', instance.isactive)
+        
+        request = self.context.get('request')
+        user = request.user if request else None
+        
+        instance.updatedby = user
+        instance.updateat = timezone.now()
+        instance.save()
+
+        # 2. Handle Levels
+        for level_data in levels_data:
+            level_id = level_data.get('id')
+
+            if level_id:
+                # --- CASE: DELETE 
+                if len(level_data) == 1:
+                    Workflowlevel.objects.filter(id=level_id, workflowid=instance).update(
+                        isdelete=True,
+                        isactive=False,
+                        deletedby=user,
+                        deleteat=timezone.now()
+                    )
+                
+                # --- CASE: UPDATE 
+                else:
+                    try:
+                        level_instance = Workflowlevel.objects.get(id=level_id, workflowid=instance)
+                        
+                        level_instance.flowlevel = level_data.get('flowlevel', level_instance.flowlevel)
+                        level_instance.approverid = level_data.get('approverid', level_instance.approverid)
+                        level_instance.employeeid = level_data.get('employeeid', level_instance.employeeid)
+                        level_instance.autoapprove = level_data.get('autoapprove', level_instance.autoapprove)
+                        level_instance.timelimit = level_data.get('timelimit', level_instance.timelimit)
+                        level_instance.isfinallevel = level_data.get('isfinallevel', level_instance.isfinallevel)
+                        level_instance.isparallel = level_data.get('isparallel', level_instance.isparallel)
+                        level_instance.name = level_data.get('name', level_instance.name)
+                        level_instance.description = level_data.get('description', level_instance.description)
+                        
+                        level_instance.updatedby = user
+                        level_instance.updateat = timezone.now()
+                        level_instance.save()
+                        
+                    except Workflowlevel.DoesNotExist:
+                        pass 
+
+            # --- CASE: CREATE
+            else:
+                Workflowlevel.objects.create(
+                    workflowid=instance,
+                    createdby=user,
+                    updatedby=user,
+                    deletedby=user,
+                    createdat=timezone.now(),
+                    isactive=True,
+                    isdelete=False,
+                    **level_data
+                )
+
+        return instance
     
 class WorkflowActionSerializer(serializers.Serializer):
     record_id = serializers.IntegerField()
