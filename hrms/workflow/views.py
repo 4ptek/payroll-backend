@@ -15,6 +15,8 @@ from .utils import dictfetchall, StandardResultsSetPagination
 from payroll.models import Payroll
 from payroll.serializers import PayrollRetrieveSerializer
 from django.db import transaction
+from .utils import send_workflow_notification
+from users.models import Users
 
 
 class WorkflowListView(APIView):
@@ -215,9 +217,6 @@ class WorkflowActionView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        print("Logged in user ID:", request.user.id)
-        print("Workflow Level Approver ID:", current_level_def.approverid_id)
-
         approver_id = current_level_def.approverid_id
 
         if approver_id and approver_id != request.user.id:
@@ -248,14 +247,46 @@ class WorkflowActionView(APIView):
                 action='Rejected'
             )
 
+            try:
+                module_name = getattr(record.moduleid, 'modulename', 'Request')
+                
+                # 1. Employee Object nikala
+                initiator_employee = record.initiatorid 
+                
+                # 2. Ab USERS table se wo user dhoonda jiska ye employee id hai
+                requester_user = Users.objects.filter(
+                    employeeid=initiator_employee,
+                    isactive=True,
+                    isdelete=False
+                ).first()
+
+                if requester_user:
+                    subject = f"Update: Your {module_name} has been Rejected"
+                    message = f"""
+                    Hello {requester_user.username},
+                    
+                    Your request (ID: {record.recordid}) for {module_name} has been REJECTED by {user.username}.
+                    
+                    Remarks: {remarks}
+                    
+                    Status: Rejected
+                    """
+                    # Ab hum User object bhej rahe hain jiske paas email hai
+                    send_workflow_notification(requester_user, subject, message)
+                else:
+                    print("Requester User not found in Users table.")
+                    
+            except Exception as e:
+                print(f"Rejection Email Failed: {e}")
+
             return custom_response(
                 data=None,
                 message="Request Rejected Successfully",
                 status=status.HTTP_200_OK
             )
-
+            
         if action == 'Approved':
-
+            
             if current_level_def.isfinallevel:
                 record.status = 'Approved'
                 record.completed_at = timezone.now()
@@ -268,6 +299,33 @@ class WorkflowActionView(APIView):
                     record_id=record.recordid,
                     action='Approved'
                 )
+                
+                try:
+                    module_name = getattr(record.moduleid, 'modulename', 'Request')
+                    
+                    initiator_employee = record.initiatorid
+                    
+                    requester_user = Users.objects.filter(
+                        employeeid=initiator_employee,
+                        isactive=True,
+                        isdelete=False
+                    ).first()
+
+                    if requester_user:
+                        subject = f"Congratulations: {module_name} Approved"
+                        message = f"""
+                        Hello {requester_user.username},
+                        
+                        Good news! Your request (ID: {record.recordid}) for {module_name} has been FULLY APPROVED.
+                        
+                        All workflow levels are completed.
+                        """
+                        send_workflow_notification(requester_user, subject, message)
+                    else:
+                        print("Final Approval: Requester User not found in Users table.")
+
+                except Exception as e:
+                    print(f"Final Approval Email Failed: {e}")
 
                 return custom_response(
                     data=None,
@@ -275,12 +333,41 @@ class WorkflowActionView(APIView):
                     status=status.HTTP_200_OK
                 )
 
-            # Move to next level
+            old_level = record.currentlevel
             record.currentlevel += 1
             record.remarks = f"Pending Level {record.currentlevel} Approval"
             record.updatedby = user
             record.updateat = timezone.now()
             record.save()
+
+            try:
+                next_level_def = Workflowlevel.objects.filter(
+                    workflowid=record.workflowid,
+                    flowlevel=record.currentlevel,
+                    isactive=True,
+                    isdelete=False
+                ).first()
+
+                if next_level_def and next_level_def.approverid:
+                    module_name = getattr(record.moduleid, 'modulename', 'Request')
+                    
+                    subject = f"Action Required: Approval Pending for {module_name}"
+                    message = f"""
+                    Hello {next_level_def.approverid.username},
+                    
+                    Level {old_level} has been approved.
+                    Now Level {record.currentlevel} is pending for YOUR approval.
+                    
+                    Module: {module_name}
+                    Record ID: {record.recordid}
+                    
+                    Please login to approve.
+                    """
+                    
+                    send_workflow_notification(next_level_def.approverid, subject, message)
+            
+            except Exception as e:
+                print(f"Next Level Email Failed: {e}")
 
             return custom_response(
                 data=None,
