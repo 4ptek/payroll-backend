@@ -3,6 +3,10 @@ from .models import Workflows, Workflowrecords
 from django.apps import apps
 from rest_framework.pagination import PageNumberPagination
 from decimal import Decimal
+from django.core.mail import send_mail
+from django.conf import settings
+from users.models import Users
+from .models import Workflowlevel
 
 def dictfetchall(cursor):
     "Return all rows from a cursor as a dict"
@@ -19,14 +23,12 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 def initiate_workflow(record_id, module_id, organization_id, initiator_employee, user):
 
-    # 1️⃣ Validate mandatory inputs
     if not record_id or not module_id or not organization_id or not initiator_employee:
         return {
             "success": False,
             "message": "Missing required workflow parameters."
         }
 
-    # 2️⃣ Get Active Workflow
     workflow = Workflows.objects.filter(
         organizationid=organization_id,
         moduleid=module_id,
@@ -40,7 +42,6 @@ def initiate_workflow(record_id, module_id, organization_id, initiator_employee,
             "message": "No active workflow configured for this module."
         }
 
-    # 3️⃣ Prevent duplicate workflow record
     if Workflowrecords.objects.filter(
         workflowid=workflow,
         recordid=record_id,
@@ -53,25 +54,40 @@ def initiate_workflow(record_id, module_id, organization_id, initiator_employee,
         }
 
     try:
-        # 4️⃣ Create workflow record
         wf_record = Workflowrecords.objects.create(
             workflowid=workflow,
             recordid=record_id,
             moduleid=module_id,
             initiatorid=initiator_employee,
-
-            currentlevel= 1,
+            currentlevel=1,
             status='Pending',
             remarks='',
-
             createdby=user,
             updatedby=user,
             deletedby=user,
             createdat=timezone.now(),
-
             isactive=True,
             isdelete=False
         )
+        
+        try:
+            level_1_def = Workflowlevel.objects.filter(
+                workflowid=workflow,
+                flowlevel=1,
+                isactive=True,
+                isdelete=False
+            ).first()
+
+            if level_1_def and level_1_def.approverid:
+                module_name = getattr(module_id, 'modulename', 'Request')
+                
+                send_approval_notification(
+                    approver_user_id=level_1_def.approverid_id, 
+                    record_id=record_id,
+                    module_name=module_name
+                )
+        except Exception as email_error:
+            print(f"Email Trigger Failed: {email_error}")
 
         return {
             "success": True,
@@ -187,4 +203,48 @@ def update_original_record_status(module_id, record_id, action):
             print(f"Payroll {record_id} status updated to {payroll.status}.")
             
     except Exception as e:
-        print(f"Error updating original record: {str(e)}")        
+        print(f"Error updating original record: {str(e)}")    
+                
+def send_approval_notification(approver_user_id, record_id, module_name):
+    try:
+        approver = Users.objects.get(id=approver_user_id)
+        
+        if approver.email:
+            subject = f"Action Required: Pending Approval for {module_name}"
+            message = f"""
+            Hello {approver.username},
+            
+            You have a new request pending for your approval.
+            
+            Module: {module_name}
+            Record ID: {record_id}
+            
+            Please log in to the portal to approve or reject this request.
+            """
+            
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [approver.email],        
+                fail_silently=True,
+            )
+            print(f"Email sent to {approver.email}")
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        
+def send_workflow_notification(user_obj, subject, message):
+    try:
+        if user_obj and hasattr(user_obj, 'email') and user_obj.email:
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [user_obj.email],        
+                fail_silently=True
+            )
+            print(f"Email sent successfully to {user_obj.email}")
+        else:
+            print("User object has no email or is None.")
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
