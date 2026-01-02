@@ -17,6 +17,8 @@ from payroll.serializers import PayrollRetrieveSerializer
 from django.db import transaction
 from .utils import send_workflow_notification
 from users.models import Users
+from meetingroom.models import Bookings
+from meetingroom.serializers import BookingSerializer
 
 
 class WorkflowListView(APIView):
@@ -544,6 +546,28 @@ class ApproverAllRequestsView(APIView):
                             "title": f"Payroll Request #{record_id}",
                             "meta_info": f"Error: {str(e)}"
                         }
+                
+                elif module_name == 'BOOKINGS' or module_name == 'Bookings':
+                    try:
+                        booking_instance = Bookings.objects.select_related('room', 'organizationid').get(booking_id=record_id)
+                        serializer = BookingSerializer(booking_instance)            
+                        details = serializer.data
+                        room_name = booking_instance.room.room_name if booking_instance.room else "Unknown Room"
+                        
+                        details['title'] = f"Booking Request - {room_name}"
+                        details['meta_info'] = f"Date: {booking_instance.booking_date} | Time: {booking_instance.start_time} - {booking_instance.end_time}"
+                        
+                    except Bookings.DoesNotExist:
+                        details = {
+                            "title": f"Booking Request #{record_id}",
+                            "meta_info": "Record not found or deleted"
+                        }
+                    except Exception as e:
+                         details = {
+                            "title": f"Booking Request #{record_id}",
+                            "meta_info": f"Error: {str(e)}"
+                        }
+                    
                 elif module_name == 'LEAVEREQUEST':
                     try:
                         with connection.cursor() as cursor:

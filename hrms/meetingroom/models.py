@@ -36,7 +36,19 @@ class Bookings(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     created_by = models.ForeignKey('users.Users', models.DO_NOTHING, db_column='created_by', blank=True, null=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid', blank=True, null=True)
-
+    otp = models.IntegerField(unique=True, null=True, blank=True)
+    status = models.TextField(blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'bookings'
+        
+class Bookinginvited(models.Model):
+    bookingid = models.ForeignKey(Bookings, models.DO_NOTHING, db_column='bookingid')
+    userid = models.ForeignKey('users.Users', models.DO_NOTHING, db_column='userid')
+    created_at = models.DateTimeField(blank=True, null=True)
+    isactive = models.BooleanField(blank=True, null=True)
+    isdelete = models.BooleanField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'bookinginvited'

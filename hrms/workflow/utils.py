@@ -201,6 +201,18 @@ def update_original_record_status(module_id, record_id, action):
             
             payroll.save(update_fields=['status'])
             print(f"Payroll {record_id} status updated to {payroll.status}.")
+        
+        elif module_id == 63:
+            BookingsModel = apps.get_model('meetingroom','Bookings')
+            booking = BookingsModel.objects.get(booking_id=record_id)
+            
+            if action == 'Approved':
+                booking.status = 'APPROVED'
+            elif action == 'Rejected':
+                booking.status = 'REJECTED'
+            
+            booking.save(update_fields=['status'])
+            print(f"Booking {record_id} status updated to {booking.status}.")
             
     except Exception as e:
         print(f"Error updating original record: {str(e)}")    
