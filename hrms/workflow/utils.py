@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from users.models import Users
 from .models import Workflowlevel
+from django.utils.html import strip_tags
 
 def dictfetchall(cursor):
     "Return all rows from a cursor as a dict"
@@ -83,7 +84,7 @@ def initiate_workflow(record_id, module_id, organization_id, initiator_employee,
                 
                 send_approval_notification(
                     approver_user_id=level_1_def.approverid_id, 
-                    record_id=record_id,
+                    record_id=wf_record.id,
                     module_name=module_name
                 )
         except Exception as email_error:
@@ -217,46 +218,99 @@ def update_original_record_status(module_id, record_id, action):
     except Exception as e:
         print(f"Error updating original record: {str(e)}")    
                 
-def send_approval_notification(approver_user_id, record_id, module_name):
+def send_approval_notification(approver_user_id, record_id, module_name, approval_url = None):
+    """
+    approval_url: Woh link jahan user click kar ke approve karega (e.g., http://yoursite.com/approve/123)
+    """
     try:
         approver = Users.objects.get(id=approver_user_id)
         
+        approval_url = "http://116.90.108.83:8087/approvals/requestDetails/" + str(record_id)
+        
         if approver.email:
-            subject = f"Action Required: Pending Approval for {module_name}"
-            message = f"""
-            Hello {approver.username},
+            subject = f"Action Required: Approval Needed for {module_name}"
             
-            You have a new request pending for your approval.
-            
-            Module: {module_name}
-            Record ID: {record_id}
-            
-            Please log in to the portal to approve or reject this request.
+            html_message = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                        <h2 style="color: #2c3e50;">Approval Request</h2>
+                        <p>Hello <strong>{approver.username}</strong>,</p>
+                        
+                        <p>A new request has been generated in the <strong>{module_name}</strong> system and is awaiting your review.</p>
+                        
+                        <p style="margin: 20px 0;">
+                            <a href="{approval_url}" 
+                               style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                               View & Approve Request
+                            </a>
+                        </p>
+                        
+                        <p style="font-size: 12px; color: #777;">
+                            Reference ID: #{record_id} <br>
+                            If the button doesn't work, please copy this link: {approval_url}
+                        </p>
+                    </div>
+                </body>
+            </html>
             """
+            
+            plain_message = strip_tags(html_message)
             
             send_mail(
                 subject,
-                message,
+                plain_message, # Plain text version
                 settings.EMAIL_HOST_USER,
-                [approver.email],        
+                [approver.email],
+                html_message=html_message, # HTML version
                 fail_silently=True,
             )
-            print(f"Email sent to {approver.email}")
+            print(f"HTML Email sent to {approver.email}")
+            
     except Exception as e:
         print(f"Failed to send email: {str(e)}")
         
-def send_workflow_notification(user_obj, subject, message):
-    try:
-        if user_obj and hasattr(user_obj, 'email') and user_obj.email:
-            send_mail(
-                subject,
-                message,
-                settings.EMAIL_HOST_USER,
-                [user_obj.email],        
-                fail_silently=True
-            )
-            print(f"Email sent successfully to {user_obj.email}")
-        else:
-            print("User object has no email or is None.")
-    except Exception as e:
-        print(f"Error sending email: {str(e)}")
+def send_custom_html_mail(user, subject, title, message_body, link_url, button_text, color_theme="#007bff"):
+    """
+    Ek reusable function jo HTML email bhejta hai.
+    color_theme: Blue (#007bff) for Action, Green (#28a745) for Success, Red (#dc3545) for Reject.
+    """
+    if not user.email:
+        print(f"User {user.username} has no email.")
+        return
+
+    html_message = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: {color_theme};">{title}</h2>
+                <p>Hello <strong>{user.username}</strong>,</p>
+                
+                <p>{message_body}</p>
+                
+                <p style="margin: 25px 0;">
+                    <a href="{link_url}" 
+                       style="background-color: {color_theme}; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                       {button_text}
+                    </a>
+                </p>
+                
+                <p style="font-size: 12px; color: #777;">
+                    If the button doesn't work, verify via this link: <br> {link_url}
+                </p>
+            </div>
+        </body>
+    </html>
+    """
+    
+    plain_message = strip_tags(html_message)
+    
+    send_mail(
+        subject,
+        plain_message,
+        settings.EMAIL_HOST_USER,
+        [user.email],
+        html_message=html_message,
+        fail_silently=True,
+    )
+    print(f"Email sent to {user.email}")
