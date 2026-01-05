@@ -109,6 +109,8 @@ class WorkflowCreateView(APIView):
             serializer.save(
                 createdby=request.user,
                 createdat=timezone.now(),
+                updatedby=request.user,
+                deletedby=request.user,
                 isactive=True,
                 isdelete=False
             )

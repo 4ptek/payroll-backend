@@ -12,7 +12,7 @@ class CreatePayrollView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        serializer = PayrollSerializer(data=request.data)
+        serializer = PayrollSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
             try:
