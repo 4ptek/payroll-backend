@@ -17,6 +17,26 @@ class PayrollSerializer(serializers.ModelSerializer):
     def validate(self, data):        
         if data['periodstart'] > data['periodend']:
             raise serializers.ValidationError("End date must be after start date.")
+
+        request = self.context.get('request')
+        
+        if request and hasattr(request.user, 'organizationid'):
+            org_instance = request.user.organizationid
+            
+            check_month = data['periodstart'].month
+            check_year = data['periodstart'].year
+
+            is_duplicate = Payroll.objects.filter(
+                organizationid=org_instance,
+                periodstart__month=check_month,
+                periodstart__year=check_year
+            ).exclude(status='REJECTED').exists()
+
+            if is_duplicate:
+                raise serializers.ValidationError(
+                    f"Payroll for {data['periodstart'].strftime('%B %Y')} already exists and is not rejected."
+                )
+        
         return data
 
     def create(self, validated_data):

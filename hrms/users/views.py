@@ -13,6 +13,8 @@ from users.serializers import UserRoleSerializer, UsersSerializer
 from .models import Userroles, Users
 from .utils import check_password, make_password
 from Helpers.ResponseHandler import custom_response
+from django.utils.html import strip_tags
+
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -171,13 +173,54 @@ class ForgotPasswordView(APIView):
         # Build reset URL
         reset_url = f"http://localhost:8001/resetPassword/{reset_token}"
 
+        html_message = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    
+                    <h2 style="color: #333333; text-align: center;">Password Reset Request</h2>
+                    
+                    <p style="color: #555555; font-size: 16px;">Hi <strong>{user.username}</strong>,</p>
+                    
+                    <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                        We received a request to reset your password. If this was you, 
+                        please click the button below to proceed.
+                    </p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{reset_url}" 
+                        style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; display: inline-block;">
+                        Reset Password
+                        </a>
+                    </div>
+                    
+                    <p style="color: #999999; font-size: 14px; text-align: center; margin-top: 20px;">
+                        If you did not request a password reset, please ignore this email.
+                    </p>
+                    
+                </div>
+            </body>
+        </html>
+        """
+        
+        # Plain text version for fallback
+        plain_message = strip_tags(html_message)
+
         # Send email
-        send_mail(
-            subject="Password Reset Request",
-            message=f"Hi {user.username},\n\nClick the link to reset your password:\n{reset_url}\n\nIgnore if you didn't request this.",
-            from_email=None,
-            recipient_list=[user.email],
-        )
+        try:
+            send_mail(
+                subject="Password Reset Request",
+                message=plain_message, # Text version
+                from_email=None,
+                recipient_list=[user.email],
+                html_message=html_message, # HTML version
+                fail_silently=False,
+            )
+        except Exception as e:
+            return custom_response(
+                message=f"Error sending email: {str(e)}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return custom_response(
             message="Password reset link sent to your email",
@@ -254,13 +297,49 @@ class UserListView(APIView):
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
             reset_token = str(refresh.access_token)
+            
             activation_url = f"http://116.90.108.83:8087/set-password/{reset_token}"
+
+            html_message = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        
+                        <h2 style="color: #333333; text-align: center;">Welcome Onboard!</h2>
+                        
+                        <p style="color: #555555; font-size: 16px;">Hi <strong>{user.username}</strong>,</p>
+                        
+                        <p style="color: #555555; font-size: 16px; line-height: 1.5;">
+                            Your account has been successfully created by the Admin. 
+                            To get started, please set your password by clicking the button below.
+                        </p>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="{activation_url}" 
+                            style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px; display: inline-block;">
+                            Set Your Password
+                            </a>
+                        </div>
+                        
+                        <p style="color: #999999; font-size: 12px; text-align: center; margin-top: 30px;">
+                            This link is valid for a limited time.<br>
+                            If the button doesn't work, ignore this email.
+                        </p>
+                        
+                    </div>
+                </body>
+            </html>
+            """
+            
+            plain_message = strip_tags(html_message)
+
             try:
                 send_mail(
                     subject="Welcome! Set Your Password",
-                    message=f"Hi {user.username},\n\nYour account has been created by Admin.\nClick the link below to set your password:\n{activation_url}\n\nThis link is valid for a limited time.",
+                    message=plain_message,
                     from_email=None,
                     recipient_list=[user.email],
+                    html_message=html_message,
                     fail_silently=False,
                 )
                 email_status = "Email sent successfully."

@@ -50,7 +50,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'designationid', 'designation',
             'basicsalary', 'attendancemachineid',
             'employeetype', 'bankaccountnumber', 'picture',
-            'isuser', 'isnew', 'organizationroleid','org_role_name', 'isactive', 'isdelete'
+            'isuser', 'isnew', 'organizationroleid','org_role_name', 'isactive', 'isdelete', 'salary_structure'
         ]
 
     def validate_employeecode(self, value):

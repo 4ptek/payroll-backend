@@ -18,7 +18,7 @@ class WorkflowLevelSerializer(serializers.ModelSerializer):
         model = Workflowlevel
         fields = [
             'id','flowlevel', 'approverid', 'autoapprove', 'timelimit', 
-            'isfinallevel', 'isparallel', 'name', 'description', 'employeeid','approverid','approver_details'
+            'isfinallevel', 'isparallel', 'name', 'description', 'employeeid','approverid','approver_details', 'isactive', 'isdelete'
         ]
         
 class WorkflowsGetSerializer(serializers.ModelSerializer):

@@ -9,6 +9,7 @@ from .models import LeaveBalances, LeaveRequests
 from workflow.utils import initiate_workflow
 from django_filters.rest_framework import DjangoFilterBackend
 from user_rbac.models import Modules
+from attendance.models import Attendance
 
 class LeavePeriodListCreateView(generics.ListCreateAPIView):
     queryset = LeavePeriods.objects.all().order_by('-id') 
@@ -151,28 +152,39 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     
-    # Enable filtering by employee
     filterset_fields = ['employee']
 
     def create(self, request, *args, **kwargs):
-        # 1. Deserialize and Validate Data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # 2. Save the Leave Request (Status default usually 'Pending')
-        # We assign created_by to the logged-in user
+        leave_start = serializer.validated_data.get('start_date') 
+        leave_end = serializer.validated_data.get('end_date')
+        
+        organization_id = self.request.auth.get('org_id')
+        
+        is_period_locked = Attendance.objects.filter(
+            organizationid=organization_id,
+            isactive=True,
+            isdelete=False,
+            status__iexact='Processed', 
+            startdate__lte=leave_end, 
+            enddate__gte=leave_start
+        ).exists()
+        
+        if is_period_locked:
+            return custom_response(
+                data=None, 
+                message="Cannot apply for leave. Attendance for this period has been closed.", 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         leave_request = serializer.save(
             created_by=request.user,
             created_at=timezone.now(),
             status="PENDING" 
         )
 
-        # ---------------------------------------------------
-        # 3. WORKFLOW INTEGRATION
-        # ---------------------------------------------------
-        
-        # NOTE: You need to pass the Module ID for "Leave" either from 
-        # the frontend or hardcode it here if it's constant.
         module = Modules.objects.filter(
             modulename__iexact='LeaveRequest',
             isactive=True, 
@@ -180,27 +192,19 @@ class LeaveRequestListCreateView(generics.ListCreateAPIView):
         ).first()
 
         if not module:
-            # Agar module nahi mila to error return karein
             return Response({
                 "message": "LeaveRequest module configuration not found.",
                 "data": serializer.data
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Assuming organization_id is attached to the logged-in user or passed in body
-        # Modify this line based on how you store organization info
-        organization_id = self.request.auth.get('org_id')
-        # organization_id = getattr(request.user, 'organization_id', request.data.get('organization_id'))
-
-        # Call your existing function
         workflow_response = initiate_workflow(
             record_id=leave_request.id,
             module_id=module,
             organization_id=organization_id,
-            initiator_employee=leave_request.employee, # The employee applying
+            initiator_employee=leave_request.employee,
             user=request.user
         )
 
-        # 4. Construct Final Response
         response_data = {
             "data": serializer.data,
             "workflow_status": workflow_response
