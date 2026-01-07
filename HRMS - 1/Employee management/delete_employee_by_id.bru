@@ -1,0 +1,26 @@
+meta {
+  name: delete_employee_by_id
+  type: http
+  seq: 5
+}
+
+delete {
+  url: http://127.0.0.1:8000/employees/6
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDU2NjYwLCJpYXQiOjE3NjMwNTMwNjAsImp0aSI6IjNmYTRiNjc1ODQ4NDQ4YjhhNDhjODUxNTljY2E1YTNkIiwidXNlcl9pZCI6IjEifQ.kCcU7kFXqyFxabfWQi6xsXnEjVKPmiTZ8l7deTCcB6I
+  Content-Type: application/json
+}
+
+body:json {
+  {
+      "cnic": "12345-6789012-5"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

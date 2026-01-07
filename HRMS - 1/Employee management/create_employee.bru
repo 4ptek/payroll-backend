@@ -1,0 +1,49 @@
+meta {
+  name: create_employee
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://116.90.108.83:85/employees/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NTY3Mjk3LCJpYXQiOjE3Njc1NjM2OTcsImp0aSI6IjY0Njc5NmE2MDY1NjRhNDVhNGM1NzRhMzk4YTM4YjIyIiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjozMiwiZW1wbG95ZWVfaWQiOjMyLCJyb2xlX2lkIjo0fQ.6a2Vg86f3WvMWOTjDA1LgpyAHnKKv_f1mJqH_QKBH_8
+}
+
+body:json {
+  {
+      "organizationid": 1,
+      "employeecode": "4p-080",
+      "firstname": "Ali",
+      "lastname": "Khan..",
+      "gender": "Male",
+      "cnic": "12345-676911907-1",
+      "dateofbirth": "1990-05-10",
+      "dateofappointment": "2023-01-15",
+      "branchid": 1,
+      "departmentid": 1,
+      "designationid": 1,
+      "basicsalary": "50000.00",
+      "attendancemachineid": "ATT-080",
+      "employeetype": "Permenant",
+      "bankaccountnumber": "",
+      "isuser" : false,
+      "isnew": false,
+      "organizationroleid": 32,
+      "salary_structure": 6
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

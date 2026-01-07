@@ -1,0 +1,26 @@
+meta {
+  name: process_payroll
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/payroll/process/5
+  body: text
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NjAwMjQ4LCJpYXQiOjE3NjY1OTY2NDgsImp0aSI6ImJiNTA4YmVjMTkyOTQ3ZjNiOTE4MjQ2YmU0YTAyNjdiIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Mn0.TXDtQqKXi2INzRu8dhaM3u-ixliW7-OQfv5ta62sEj4
+}
+
+body:text {
+  {
+      "periodstart": "2025-12-01",
+      "periodend": "2025-12-31"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

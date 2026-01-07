@@ -1,0 +1,51 @@
+meta {
+  name: Offboarding-List
+  type: http
+  seq: 8
+}
+
+get {
+  url: http://127.0.0.1:8000/employees/offboarding/?organizationid=1&page=1&page_size=10&search=Ali&status=IN_PROGRESS
+  body: json
+  auth: bearer
+}
+
+params:query {
+  organizationid: 1
+  page: 1
+  page_size: 10
+  search: Ali
+  status: IN_PROGRESS
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MTU3MTkzLCJpYXQiOjE3NjYxNTM1OTMsImp0aSI6IjVjMzg4ZmM5YjRkNzQ1OWM5ZjVlNjBhNWYyNzEzYzk5IiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.MkZcCIKmZnj0LKFxNUP5d53td36-WC6GwJwiXmH067M
+}
+
+body:json {
+  {
+      "employee": 21,
+      "offboarding_type": "Resignation",
+      "last_working_day": "2025-12-31",
+      "reason": "Personal reasons",
+      "settlement": {
+          "last_salary": 50000.00,
+          "leave_encashment": 5000.00,
+          "bonus": 10000.00,
+          "other_earnings": 2000.00,
+          "deductions": 3000.00,
+          "net_payable": 90000.00,
+          "remarks": "Final settlement calculated including bonus and leave encashment"
+      }
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

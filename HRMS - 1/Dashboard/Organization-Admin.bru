@@ -1,0 +1,19 @@
+meta {
+  name: Organization-Admin
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:8000/dashboard/org-admin/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2ODc1NDQ5LCJpYXQiOjE3NjY4NzE4NDksImp0aSI6IjM1NjE3YTNiNDM0ZjQxOWE5ZGUxMGQwY2QyNTMyZjhkIiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzIsInJvbGVfaWQiOjR9.HV8yXH4rnxa2Yy_aDLFd68BgZ3ubDXBRcmdyv83arcw
+}
+
+settings {
+  encodeUrl: true
+}

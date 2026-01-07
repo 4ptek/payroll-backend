@@ -1,0 +1,19 @@
+meta {
+  name: checklist
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://127.0.0.1:8000/employees/workflow/checklist/11/ONBOARDING/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MDgxMTY5LCJpYXQiOjE3NjYwNzc1NjksImp0aSI6IjVmZDc2NGRkNGQ2YjRjZmI5ZDYwNDFlNTM0YWQ0NzIxIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.tZhhmTBFo8IXqY5XvKFYpJqIqp-3YQA6UvqwLYgeqeY
+}
+
+settings {
+  encodeUrl: true
+}

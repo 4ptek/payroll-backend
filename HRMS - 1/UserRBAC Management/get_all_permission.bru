@@ -1,0 +1,23 @@
+meta {
+  name: get_all_permission
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:8000/user_rbac/permissions-matrix
+  body: none
+  auth: bearer
+}
+
+headers {
+  : 
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzNzI5ODExLCJpYXQiOjE3NjM3MjYyMTEsImp0aSI6IjVlN2U3OTEzMmVkMjRjODU5MWZmYjM3MjcyMTg1ZWQ0IiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.sW9Ufr_2DBruuD9oKptYUBDsmPsS_47g4Xhm1mAvhgY
+}
+
+settings {
+  encodeUrl: true
+}

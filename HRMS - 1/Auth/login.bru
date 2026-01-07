@@ -1,0 +1,22 @@
+meta {
+  name: login
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/users/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "behomo6569@mekuron.com",
+    "password": "1234"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

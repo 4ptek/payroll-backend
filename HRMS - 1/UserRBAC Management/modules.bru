@@ -1,0 +1,23 @@
+meta {
+  name: modules
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://127.0.0.1:8000/user_rbac/modules
+  body: none
+  auth: bearer
+}
+
+headers {
+  : 
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1OTkwMDE1LCJpYXQiOjE3NjU5ODY0MTUsImp0aSI6Ijc4M2YxMjE0ZDA4MDRhM2FiYjVkNTA1NDdmYTRjMTc3IiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.riNgpzVMJBpbQYMwmTM79ZWn7tjo-Y9_TJukCayH9fE
+}
+
+settings {
+  encodeUrl: true
+}

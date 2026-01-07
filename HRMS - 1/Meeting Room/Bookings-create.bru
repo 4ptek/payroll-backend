@@ -1,0 +1,31 @@
+meta {
+  name: Bookings-create
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/meeting/bookings/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MzgxNjIyLCJpYXQiOjE3NjczNzgwMjIsImp0aSI6IjE5NTQxMDhkMWNiYjQxMWE5YTg4NDBlNjAwYjdjNTdmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.JqJQLokg-Bl8kDIJ8PG7kus6L0NwPmhVK0JE8bfq1o8
+}
+
+body:json {
+  {
+      "room": 10,
+      "organizer_name": "Ali Khan",
+      "booking_date": "2025-10-25",
+      "start_time": "19:00:00",
+      "end_time": "20:00:00",
+      "organizationid": 1,
+      "invited_ids": [18,19] // if invited peoples are being added
+  }
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,25 @@
+meta {
+  name: EmployeeIndividualAttendance-View
+  type: http
+  seq: 8
+}
+
+get {
+  url: http://127.0.0.1:8000/attendance/monthly-report/?employee_id=33&month=12&year=2025
+  body: none
+  auth: bearer
+}
+
+params:query {
+  employee_id: 33
+  month: 12
+  year: 2025
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2ODM2MDc5LCJpYXQiOjE3NjY4MzI0NzksImp0aSI6IjAxMTdjYjY0NjAwNzQ1NmY4YjhmMzg1NjdjODE0NTdkIiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzEsInJvbGVfaWQiOjN9.L4vmIkVkzBiUY-enH2AdwmPKsOpTh1ZxxXLVWHTrj48
+}
+
+settings {
+  encodeUrl: true
+}

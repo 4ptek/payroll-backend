@@ -1,0 +1,25 @@
+meta {
+  name: leave-requests-List
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://127.0.0.1:8000/leaves/leave-requests/?page=1&page_size=10&employee=38
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+  employee: 38
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTgxNzY4LCJpYXQiOjE3NjY1NzgxNjgsImp0aSI6IjIwNDkzNDM3OTExMTQxNzhiMmRkZDdmZmY5NTIyYzk1IiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzEsInJvbGVfaWQiOjN9.oTCkTvgTQ3NXcnLpQksfxixQLOHqJwlSfdW3HH0wafE
+}
+
+settings {
+  encodeUrl: true
+}

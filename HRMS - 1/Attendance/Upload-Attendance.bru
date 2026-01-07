@@ -1,0 +1,25 @@
+meta {
+  name: Upload-Attendance
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://127.0.0.1:8000/attendance/upload-excel/
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTk0MTQxLCJpYXQiOjE3NjY1OTA1NDEsImp0aSI6ImFhOTRhOTg0MDg5YzRmZjE5MGE2ODFlMGE4ZWUzYjNjIiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzEsInJvbGVfaWQiOjN9.X8dLH2sibH2SY58z_DJLHNO7um6VoOQrJBxkFn33hiY
+}
+
+body:multipart-form {
+  attendanceid: 7
+  calculation_mode: manual
+  file: @file(/C:/Users/IT/Downloads/Manual Attendance.xlsx)
+}
+
+settings {
+  encodeUrl: true
+}

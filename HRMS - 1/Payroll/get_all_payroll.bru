@@ -1,0 +1,19 @@
+meta {
+  name: get_all_payroll
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://127.0.0.1:8000/payroll/list/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NzU1NTE3LCJpYXQiOjE3NjY3NTE5MTcsImp0aSI6IjAxYTQyMTIxNjY2NzRjNjdhYjc0NDgxOTBiZjgwNjcyIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.Zx7RrFDK7g9_MNfvU4zmB3SJwFpIW8BUL_wm6nY6lIk
+}
+
+settings {
+  encodeUrl: true
+}

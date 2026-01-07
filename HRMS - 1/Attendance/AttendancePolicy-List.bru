@@ -1,0 +1,29 @@
+meta {
+  name: AttendancePolicy-List
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:8000/attendance/attendance-policies/?organizationid=1&page=1&page_size=20&isactive=true&shiftstart=09:00:00&shiftend=18:00:00&attendancesource=Biometric
+  body: none
+  auth: bearer
+}
+
+params:query {
+  organizationid: 1
+  page: 1
+  page_size: 20
+  isactive: true
+  shiftstart: 09:00:00
+  shiftend: 18:00:00
+  attendancesource: Biometric
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MTUwMDIxLCJpYXQiOjE3NjYxNDY0MjEsImp0aSI6ImRlNDI4YTMwMjJlZDRmMmZhNDczZThiNjA0ZjdhNWZjIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.A1o_ELUfET0VX9MSelVJGtOShFMMlntITKqNE02KPq0
+}
+
+settings {
+  encodeUrl: true
+}

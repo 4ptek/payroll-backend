@@ -1,0 +1,26 @@
+meta {
+  name: generate_payroll
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/payroll/generate/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTk0OTI5LCJpYXQiOjE3NjY1OTEzMjksImp0aSI6IjBhMWNhZjgyMWI1MjQ1NWFiN2E0ODI4YjI3YzIxMjQ4IiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjpudWxsfQ.m7E0eBaRuYXQj8vSRt2AJj5ucu6CdTycYrmoS57gp1U
+}
+
+body:json {
+  {
+      "periodstart": "2025-12-01",
+      "periodend": "2025-12-31"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

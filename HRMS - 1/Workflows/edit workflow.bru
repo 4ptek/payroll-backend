@@ -1,0 +1,55 @@
+meta {
+  name: edit workflow
+  type: http
+  seq: 2
+}
+
+put {
+  url: http://127.0.0.1:8000/workflow/update/21/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MzY1MzQ4LCJpYXQiOjE3NjczNjE3NDgsImp0aSI6ImJiOGNiMjk5MjMyZDQyZDRhMjk0N2VhZWVlOTQ1NDUzIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.J3C6V53U5pe-1rImXUo-gI6uYQuobaZj2jU25SJ42kI
+}
+
+body:json {
+  {
+      //if edit workflow field (no need to pass levels)
+      "name": "Leave Application Workflow",
+      "description": "Standard approval process for employee leaves.",
+      "levels": [
+          {
+              // case: A (update existing level)
+              "id": 36, //workflowlevel id
+              "flowlevel": 3,
+              "name": "HR Approval" // passes as many field you want to edit
+          },
+          {   
+              //case: B (delete existing level)
+              "id": 44
+          },
+          {
+              // case: C (add new level)
+              "flowlevel": 1,
+              "name": "Team Lead Approval",
+              "description": "First level approval by immediate supervisor",
+              "approverid": null, 
+              "autoapprove": false,
+              "timelimit": 24,
+              "isfinallevel": false,
+              "isparallel": false
+          }
+      ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

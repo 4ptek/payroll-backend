@@ -1,0 +1,20 @@
+meta {
+  name: delete_user_by_id
+  type: http
+  seq: 4
+}
+
+delete {
+  url: http://127.0.0.1:8000/users/3
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYyOTcyODk2LCJpYXQiOjE3NjI5NjkyOTYsImp0aSI6IjM0MzNjZGQ1MTQwODRhNzNiZmJkYWE4MGZhNmViZGY5IiwidXNlcl9pZCI6IjEifQ.RhUuHxVs4I_NbUPi6MCpQTLMKe0zkZ2O6w9ZyXSMt2Q
+}
+
+settings {
+  encodeUrl: true
+}

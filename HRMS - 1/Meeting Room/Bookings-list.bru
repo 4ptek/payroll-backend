@@ -1,0 +1,26 @@
+meta {
+  name: Bookings-list
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://127.0.0.1:8000/meeting/bookings/?page=1&page_size=10&start_date=2025-12-23&end_date=2025-12-31
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+  start_date: 2025-12-23
+  end_date: 2025-12-31
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MzgxNjIyLCJpYXQiOjE3NjczNzgwMjIsImp0aSI6IjE5NTQxMDhkMWNiYjQxMWE5YTg4NDBlNjAwYjdjNTdmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.JqJQLokg-Bl8kDIJ8PG7kus6L0NwPmhVK0JE8bfq1o8
+}
+
+settings {
+  encodeUrl: true
+}

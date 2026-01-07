@@ -1,0 +1,25 @@
+meta {
+  name: create_role
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/users/role/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMzk2MTE3LCJpYXQiOjE3NjMzOTI1MTcsImp0aSI6IjY3MjE5NGExNWIyNTQyOTRhZGY5MDc5MjlmMzU4MTVmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.tsljEhpkL328gXvppG2Ls_Tw6KO-5kGfbwXxQs-0osg
+}
+
+body:json {
+  {
+      "rolename": "lead"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

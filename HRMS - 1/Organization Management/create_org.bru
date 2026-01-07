@@ -1,0 +1,62 @@
+meta {
+  name: create_org
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/organizations/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDU4ODE5LCJpYXQiOjE3NjMwNTUyMTksImp0aSI6ImFjOTlhZjJiY2IzMTQ3Y2ZiN2I0OWQxNDQ0MGRlYzQ5IiwidXNlcl9pZCI6IjEifQ.BLnQvM39TmKZH8pagCfEJp_-HBCZ7nMPxDEzncW6b28
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1NTY0MTQ5LCJpYXQiOjE3NjU1NjA1NDksImp0aSI6IjBkMDU0M2UyN2VlNTRjOTBiOGJhODY0ZGFkZGU3MjNiIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.5YFxCUy7-ox_d88LbNIM1GrZvhBLeDgJ2gXoiAySGLI
+}
+
+body:json {
+  {
+    "id": 1,
+    "name": "Li Pvt Ltd",
+    "code": "L123-001",
+    "email": "Li@example.com",
+    "phone": "1212121233311",
+    "address": "123 Main Street",
+    "country": "Pakistan",
+    "currency": "PKR",
+    "timezone": "Asia/Karachi",
+    "organizationlogo": "https://example.com/logo.png",
+    "branches": [
+      {
+        "id": 1,
+        "name": "Lahore Branch",
+        "address": "Model Town",
+        "city": "Lahore",
+        "departments": [
+          { "id": 1, "name": "HR" },
+          { "id": 2, "name": "IT" }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Karachi Branch",
+        "address": "DHA",
+        "city": "Karachi",
+        "departments": [
+          { "id": 3, "name": "Finance" },
+          { "id": 4, "name": "Sales" }
+        ]
+      }
+    ]
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,21 @@
+meta {
+  name: new_access_token
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://127.0.0.1:8000/users/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2NzM2OTUyMSwiaWF0IjoxNzY3MjgzMTIxLCJqdGkiOiI2YWEzNThiMTYxZjQ0Njg5OTY1NWNkZjAwZTNiNGFmYyIsInVzZXJfaWQiOiIyMyIsIm9yZ19pZCI6MzIsImVtcGxveWVlX2lkIjo0Nywicm9sZV9pZCI6N30.8kR7tCeu-f0JRt2tUCOLWnqN_d1r_ifn8kA9BCcKBIo"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

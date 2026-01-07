@@ -1,0 +1,19 @@
+meta {
+  name: Get_employee_by_id
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://127.0.0.1:8000/employees/6
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+}
+
+settings {
+  encodeUrl: true
+}

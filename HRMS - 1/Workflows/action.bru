@@ -1,0 +1,32 @@
+meta {
+  name: action
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://127.0.0.1:8000/workflow/action/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Mzc4Nzk4LCJpYXQiOjE3NjczNzUxOTgsImp0aSI6ImUzZGFiZWRmZDE5ZjQyMjRiNmI3YzhjNmU4ZGRkODhlIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.Y30yhlo2m3qzs7vv59SbhXGKGSz9lJnV81BCUxc3klQ
+}
+
+body:json {
+  {
+      "record_id": 57, // workflow_record_id
+      "action": "Approved",
+      "remarks": "Documents verified, approved for next level."
+  }
+}
+
+settings {
+  encodeUrl: true
+}

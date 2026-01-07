@@ -1,0 +1,19 @@
+meta {
+  name: employee
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://127.0.0.1:8000/dashboard/employee/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2ODc2MDM1LCJpYXQiOjE3NjY4NzI0MzUsImp0aSI6IjgzMjMzZDM0MzRkZjQ5ZjZhY2MwN2QzMDZkN2Y0NzZlIiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzIsInJvbGVfaWQiOjR9.fegjxEtn0Leb_324QCZ2DMgJ375T_kbyH64nAS-hTyI
+}
+
+settings {
+  encodeUrl: true
+}

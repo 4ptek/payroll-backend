@@ -1,0 +1,42 @@
+meta {
+  name: offboarding
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://127.0.0.1:8000/employees/offboarding/create/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NDkwNjA1LCJpYXQiOjE3NjY0ODcwMDUsImp0aSI6IjFjOTI4MjhkYmEwODRmOTdhNjZiNjU3N2ZiYjg3Nzk4IiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzF9.u8JTBle_MugrLZtkAchHRg1RaLFvuPXXAgriBwh-5vQ
+}
+
+body:json {
+  {
+      "employee": 34,
+      "offboarding_type": "Resignation",
+      "reason": "Personal reasons",
+      "resignation_date": "2025-12-20",
+      "last_working_day": "2026-01-20",
+      "settlement": {
+          "last_salary": 75000.00,
+          "leave_encashment": 12500.50,
+          "bonus": 5000.00,
+          "other_earnings": 2000.00,
+          "deductions": 1500.00,
+          "remarks": "Deduction for lost ID card"
+      }
+  }
+}
+
+settings {
+  encodeUrl: true
+}

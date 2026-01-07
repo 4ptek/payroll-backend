@@ -1,0 +1,25 @@
+meta {
+  name: Attendance-Process
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://127.0.0.1:8000/attendance/1/process/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NDExNDAzLCJpYXQiOjE3NjY0MDc4MDMsImp0aSI6ImM2NDQ0ODU2OTM2ZjRhNmQ4NDgwOWZlNzlmMzM2MWMxIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.RzNz_z4TT3j7v13_P8rIYUmEmlh2IAuJs_DyoCOiXCQ
+}
+
+body:json {
+  {
+      "processedby": 1
+  }
+}
+
+settings {
+  encodeUrl: true
+}

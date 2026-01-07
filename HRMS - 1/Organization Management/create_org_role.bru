@@ -1,0 +1,33 @@
+meta {
+  name: create_org_role
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://127.0.0.1:8000/organizations/role
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDU4ODE5LCJpYXQiOjE3NjMwNTUyMTksImp0aSI6ImFjOTlhZjJiY2IzMTQ3Y2ZiN2I0OWQxNDQ0MGRlYzQ5IiwidXNlcl9pZCI6IjEifQ.BLnQvM39TmKZH8pagCfEJp_-HBCZ7nMPxDEzncW6b28
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MDI1MTcxLCJpYXQiOjE3NjcwMjE1NzEsImp0aSI6IjliZGUzMTc0NjYwNjRiNjk4ZTkyNWM0YjIwNTJlOTgyIiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzIsInJvbGVfaWQiOjR9.f4Uyqa1fhLzl7jImaxS3KQi85Wzi_z5jlzx2D5tGbHs
+}
+
+body:json {
+  {
+      "name": "CMO (Chief Marketing Officer)",
+      "reportto" : "24",
+      "organizationid": 1
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

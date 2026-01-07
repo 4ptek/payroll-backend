@@ -1,0 +1,32 @@
+meta {
+  name: Get_all_employee
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:8000/employees/?page=1&page_size=10&search=Ali&organizationid=1&departmentid=1&status=false
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+  search: Ali
+  organizationid: 1
+  departmentid: 1
+  status: false
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1NTY0MTQ5LCJpYXQiOjE3NjU1NjA1NDksImp0aSI6IjBkMDU0M2UyN2VlNTRjOTBiOGJhODY0ZGFkZGU3MjNiIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.5YFxCUy7-ox_d88LbNIM1GrZvhBLeDgJ2gXoiAySGLI
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1OTgwMjYzLCJpYXQiOjE3NjU5NzY2NjMsImp0aSI6IjRmMDc1YTkxNmUxYjQyMmI4YTJmN2ZhNTRkNjU0MWZlIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.iqn2Au6VDiLhKbK2yakXQ1-XAEjJJtX7IVwMjN1DGP4
+}
+
+settings {
+  encodeUrl: true
+}
