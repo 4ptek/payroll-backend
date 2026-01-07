@@ -1,0 +1,38 @@
+meta {
+  name: Attendance-Create
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/attendance/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTE1NDkyLCJpYXQiOjE3NjY1MTE4OTIsImp0aSI6IjEwZDQwZGFlZjU5MjQ4M2VhODYyNjczMTM2MjZkZTA2IiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzEsInJvbGVfaWQiOjN9.XVi1VxEj3NasNqEre8jD-PoePdxkkQK0PN8uppMqjt8
+}
+
+body:json {
+  {
+      "organizationid": 1,
+      "attendancepolicyid": 2,
+      "startdate": "2025-12-01",
+      "enddate": "2025-12-31",
+      "description": "December 2025 Attendance Cycle",
+      "status": "Open",//Processed, Closed
+      "processedby": null,
+      "processedat": null,
+      "createdby": 1,
+      "isactive": true,
+      "isdelete": false,
+      "updatedby": 1,
+      "deletedby": null,
+      "totaldays": 26
+  }
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,24 @@
+meta {
+  name: leave-types-List
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://127.0.0.1:8000/leaves/leave-types/?page=1&page_size=10
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MzU4NDU5LCJpYXQiOjE3NjYzNTQ4NTksImp0aSI6ImQ3YWFlZGI1NjVkNzRhOWJhODBjNGE1YWFhNTMzZjdjIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.kqB-9ZAZ3PvDTkJlBtIffyM4JeNSZOFF9ieQ14-Aj60
+}
+
+settings {
+  encodeUrl: true
+}

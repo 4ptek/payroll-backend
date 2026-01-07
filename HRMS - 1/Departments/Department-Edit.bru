@@ -1,0 +1,25 @@
+meta {
+  name: Department-Edit
+  type: http
+  seq: 2
+}
+
+patch {
+  url: http://127.0.0.1:8000/departments/26/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Mjc5MjA1LCJpYXQiOjE3NjcyNzU2MDUsImp0aSI6IjliYzE5ZjM2NjQwNjQ4MzdiOTU2ZTIzNDg1Y2ExNWZmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.uVWXTtHiHiQ4buhJjfo0Wo87OVwPJC9J8c5Rkdcb7O4
+}
+
+body:json {
+  {
+      "name": "Islamabad Depart 2"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

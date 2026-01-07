@@ -1,0 +1,25 @@
+meta {
+  name: leave-balances-List
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://127.0.0.1:8000/leaves/leave-balances/?page=1&page_size=10&employee=31
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+  employee: 31
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTg4ODA1LCJpYXQiOjE3NjY1ODUyMDUsImp0aSI6IjliZTdjZTFmMTU3NTRiYjJiYTRlMDJjNThiOTA3YTRjIiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzEsInJvbGVfaWQiOjN9.TqS4s1H1Y4zkidHPbZ2Fk9-vuxrTxUoWEAJOpnsXFhQ
+}
+
+settings {
+  encodeUrl: true
+}

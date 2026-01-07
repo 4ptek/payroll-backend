@@ -1,0 +1,31 @@
+meta {
+  name: Get_all_workflows
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://127.0.0.1:8000/workflow/list/?page=1&page_size=10&organizationid=1&moduleid=5&isactive=true
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  page_size: 10
+  organizationid: 1
+  moduleid: 5
+  isactive: true
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1NTY0MTQ5LCJpYXQiOjE3NjU1NjA1NDksImp0aSI6IjBkMDU0M2UyN2VlNTRjOTBiOGJhODY0ZGFkZGU3MjNiIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.5YFxCUy7-ox_d88LbNIM1GrZvhBLeDgJ2gXoiAySGLI
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MjkxMDQ2LCJpYXQiOjE3NjcyODc0NDYsImp0aSI6Ijk4ZWRkNmQ0MGVmMDQxYTliZGMwNmExZGIyMmNjNjUzIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0._1Fzg4VXP1-aMJnaibSuzDd3NO47HsIhjweghLq67E0
+}
+
+settings {
+  encodeUrl: true
+}

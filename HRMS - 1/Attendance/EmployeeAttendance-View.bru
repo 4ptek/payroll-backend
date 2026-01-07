@@ -1,0 +1,35 @@
+meta {
+  name: EmployeeAttendance-View
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://127.0.0.1:8000/attendance/dashboard/?type=summary&organizationid=1&month=2025-01
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: summary
+  organizationid: 1
+  month: 2025-01
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MTcyMDkzLCJpYXQiOjE3NjYxNjg0OTMsImp0aSI6IjJhNGUwNzE2Yzk2ODRlMzU4NjllODM0M2IwZjEzNDc5IiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.T5ZNr2_Z1zup_TDdYtnuxBrLXF_TqitW-gHAiWPOSHM
+}
+
+settings {
+  encodeUrl: true
+}
+
+docs {
+  (daily)
+  
+  StartFragment[http://127.0.0.1:8000/attendance/dashboard/?type=daily&amp;organizationid=1&amp;date=2025-01-01EndFragment](http://127.0.0.1:8000/attendance/dashboard/?type=daily&organizationid=1&date=2025-01-01EndFragment)
+  
+  (monthly)
+  
+  StartFragment[http://127.0.0.1:8000/attendance/dashboard/?type=summary&amp;organizationid=1&amp;month=2025-01EndFragment](http://127.0.0.1:8000/attendance/dashboard/?type=summary&organizationid=1&month=2025-01EndFragment)
+}

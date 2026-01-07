@@ -1,0 +1,48 @@
+meta {
+  name: AttendancePolicy-Create
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://127.0.0.1:8000/attendance/attendance-policies/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MTcyMDkzLCJpYXQiOjE3NjYxNjg0OTMsImp0aSI6IjJhNGUwNzE2Yzk2ODRlMzU4NjllODM0M2IwZjEzNDc5IiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.T5ZNr2_Z1zup_TDdYtnuxBrLXF_TqitW-gHAiWPOSHM
+}
+
+body:json {
+  {
+      "organizationid": 1,
+      "name": "Standard Morning Shift",
+      "description": "General 9-to-6 shift for IT staff",
+      "shiftstart": "09:00:00",
+      "shiftend": "18:00:00",
+      "graceperiodmins": 15,
+      "halfdayaftermins": 240,
+      "workinghoursperday": "8.00",
+      "overtimeafterhours": "8.00",
+      "maxovertimeperday": "3.00",
+      "weeklyoff": ["Sunday", "Saturday"],
+      "leavedeductionafterlates": 3,
+      "attendancesource": "Biometric",
+      "effectivefrom": "2025-01-01",
+      "effectiveto": "2025-01-31",
+      "createdat": "2025-12-20",
+      "createdby": 5,
+      "updatedby": 5,
+      "deletedby": 5,
+      "isactive": true,
+      "extras": {
+          "allow_remote": false,
+          "break_duration": 60
+      }
+  }
+}
+
+settings {
+  encodeUrl: true
+}

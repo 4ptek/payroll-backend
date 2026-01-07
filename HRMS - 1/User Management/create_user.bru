@@ -1,0 +1,38 @@
+meta {
+  name: create_user
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/users/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYyOTY5MjUzLCJpYXQiOjE3NjI5NjU2NTMsImp0aSI6Ijg5MWI1NTdiMmVkNzQ5MjBiOGYxYTE1NWVmNzk1NGFhIiwidXNlcl9pZCI6IjEifQ.3pV1NFN-vR4-p1EewgiA4kqWjJk9VNj6TwnzOyIMHqk
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NDI5ODA1LCJpYXQiOjE3NjY0MjYyMDUsImp0aSI6ImM0MTUyNTRmNDcxYzQ0OWQ4NzZmNTY5N2MwNTc1ZjZiIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjpudWxsfQ.UhJ-QMAuhdxogZaqqrg-hc4InsdTIdd_MFfXRlCeHwA
+}
+
+body:json {
+  {
+    "organizationid": 1,
+    "username": "hivini2432",
+    "email": "hivini2432@mucate.com",
+    "phone": "+923001234567",
+    "userpassword": "",
+    "isactive": true,
+    "isdelete": false,
+    "roleid": 2,
+    "employeeid": 29
+  }
+}
+
+settings {
+  encodeUrl: true
+}

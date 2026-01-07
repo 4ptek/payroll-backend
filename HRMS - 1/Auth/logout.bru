@@ -1,0 +1,19 @@
+meta {
+  name: logout
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://127.0.0.1:8000/users/auth/logout
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYyOTYzMzQzLCJpYXQiOjE3NjI5NTk3NDMsImp0aSI6IjY0NTIwNzBjN2Y3NTQwY2NhMWIwN2YzYTQ2ZDU1NzQyIiwidXNlcl9pZCI6IjEifQ.ou656Bzj-V3jJ_VRxGlK8SNONzP_907uTs7Z03Aq0Wo
+}
+
+settings {
+  encodeUrl: true
+}

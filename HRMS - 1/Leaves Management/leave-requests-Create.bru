@@ -1,0 +1,32 @@
+meta {
+  name: leave-requests-Create
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://127.0.0.1:8000/leaves/leave-requests/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTAwMzU5LCJpYXQiOjE3NjY0OTY3NTksImp0aSI6ImEwZTczMjNkMWE4NjQwYWQ4NjlhZWFjZWY1NzY4MmU0IiwidXNlcl9pZCI6IjE4Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzF9.lU1l3h6q2fo6QwqHwf-lFIs61d_6jnxbRUm2z7uUQdo
+}
+
+body:json {
+  {
+      "employee": 38,
+      "leave_type": 8,
+      "start_date": "2025-01-10",
+      "end_date": "2025-01-12",
+      "day_count": 2.0,
+      "reason": "Family emergency",
+      "manager_comment": "",
+      "organization_id": 1
+  }
+}
+
+settings {
+  encodeUrl: true
+}

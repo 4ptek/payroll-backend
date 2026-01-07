@@ -1,0 +1,33 @@
+meta {
+  name: edit_org_role
+  type: http
+  seq: 6
+}
+
+patch {
+  url: http://127.0.0.1:8000/organizations/role/39/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Mjg2OTQzLCJpYXQiOjE3NjcyODMzNDMsImp0aSI6Ijg2OGRlNjczMmM3YTQ2YzE5OGRlMzI2NTQ3YzNjNzFmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.FPFLj_wonYcOGDb1GfKAhHfo9AwjIGJsx9py3ZllKdI
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Mjg2OTQzLCJpYXQiOjE3NjcyODMzNDMsImp0aSI6Ijg2OGRlNjczMmM3YTQ2YzE5OGRlMzI2NTQ3YzNjNzFmIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.FPFLj_wonYcOGDb1GfKAhHfo9AwjIGJsx9py3ZllKdI
+}
+
+body:json {
+  {
+      "name": "HR Managers",
+      "designation_id": 20
+      //"reportto": "24"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

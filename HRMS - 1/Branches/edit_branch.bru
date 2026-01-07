@@ -1,0 +1,29 @@
+meta {
+  name: edit_branch
+  type: http
+  seq: 2
+}
+
+patch {
+  url: http://127.0.0.1:8000/branches/22/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Mjc2MDkwLCJpYXQiOjE3NjcyNzI0OTAsImp0aSI6ImIwODUyMzZkMzU3YTQ3ZWI5M2M4NDdiMDE4MGE4NWVhIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.GMSG4Q0HfBNovYAdkcDCa_bCOCLSVPb-648_7ivBRgo
+}
+
+body:json {
+  {
+      "name": "Branch 9"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

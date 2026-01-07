@@ -1,0 +1,30 @@
+meta {
+  name: Room-create
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/meeting/rooms/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2MTg1MTYyLCJpYXQiOjE3NjYxODE1NjIsImp0aSI6IjgyNTE0YjUyYzJmNTQwZjg4Mzg4MWMyOTE1YzIxYTVmIiwidXNlcl9pZCI6IjUiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo5fQ.GY_8XFrmuxvnc4zzZVdVV-ZCs0EJihzw4PBxSoQHHIk
+}
+
+body:json {
+  {
+      "room_name": "Meeting Room C",
+      "building": "Main Block",
+      "floor": "1st",
+      "capacity": 10,
+      "organizationid": 1,
+      "amenities": "wifi"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

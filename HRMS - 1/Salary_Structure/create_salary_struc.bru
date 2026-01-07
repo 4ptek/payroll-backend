@@ -1,0 +1,47 @@
+meta {
+  name: create_salary_struc
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/salaryStructure/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2NTAwNjI2LCJpYXQiOjE3NjY0OTcwMjYsImp0aSI6Ijc3MTA5NTE2ZjNiMDRkZmZiMzI4Yjg2ODA4ZTZjNGZjIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjpudWxsfQ.c1iz9CG-CEM67tM0W8GKrORYcNtHtdiOrD7EElXwVjQ
+}
+
+body:json {
+  {
+      "title": "Mid Level",
+      "base_salary": 4000.00,
+      "is_active": true,
+      "components": [
+          {
+              "name": "Housing Allowance",
+              "type": "earning",
+              "amount_type": "percentage",
+              "value": 10
+          },
+          {
+              "name": "Transport Allowance",
+              "type": "earning",
+              "amount_type": "fixed",
+              "value": 200
+          },
+          {
+              "name": "Provident Fund",
+              "type": "deduction",
+              "amount_type": "percentage",
+              "value": 4
+          }
+      ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

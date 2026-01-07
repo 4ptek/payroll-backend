@@ -1,0 +1,19 @@
+meta {
+  name: Get_org_by_id
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://127.0.0.1:8000/organizations/1
+  body: none
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDU4ODE5LCJpYXQiOjE3NjMwNTUyMTksImp0aSI6ImFjOTlhZjJiY2IzMTQ3Y2ZiN2I0OWQxNDQ0MGRlYzQ5IiwidXNlcl9pZCI6IjEifQ.BLnQvM39TmKZH8pagCfEJp_-HBCZ7nMPxDEzncW6b28
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,43 @@
+meta {
+  name: get_all_org_role
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://127.0.0.1:8000/organizations/role?organizationid=1
+  body: json
+  auth: bearer
+}
+
+params:query {
+  organizationid: 1
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzNzQ3OTY4LCJpYXQiOjE3NjM3NDQzNjgsImp0aSI6IjViYmIzYTIzY2VkZTQ0NzdiOGE5NGE1ZDJjYmFlYWIxIiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjF9.8VKNgCxTK3QtAmBVtgzpJyXPi8qrDef3IiGtK4aGYco
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MDIwNzM5LCJpYXQiOjE3NjcwMTcxMzksImp0aSI6IjVkODlmNjdlNTg3MzQ2N2Q4MDQ2NDNiYzNmNjkwYTY4IiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzIsInJvbGVfaWQiOjR9.kfOPqyS3tMUF-NO14zNxGWepxcT-ctl9y9KgIqocT8g
+}
+
+body:json {
+  {
+      "name": "My Organization",
+      "code": "ORG-001",
+      "email": "org@info.com",
+      "phone": "123456789",
+      "address": "123 Street, City",
+      "country": "Pakistan",
+      "currency": "PKR",
+      "timezone": "Asia/Karachi",
+      "organizationlogo": "logo.png"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}

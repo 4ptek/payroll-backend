@@ -1,0 +1,27 @@
+meta {
+  name: Department-Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/departments/create/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY2ODg5NTQ2LCJpYXQiOjE3NjY4ODU5NDYsImp0aSI6IjdhZjNhNzAxZmVkOTQ0MmY5MmFmYWUwYzI4OWE5M2I2IiwidXNlcl9pZCI6IjE5Iiwib3JnX2lkIjoxLCJlbXBsb3llZV9pZCI6MzIsInJvbGVfaWQiOjR9.VORr12l8TFYLRtsGnUYooQNeaKcDokJ27jHhwdVtU-c
+}
+
+body:json {
+  {
+      "organizationid": 1,
+      "branchid": 1,
+      "name": "IT Department"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

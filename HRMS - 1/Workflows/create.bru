@@ -1,0 +1,55 @@
+meta {
+  name: create
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/workflow/create/
+  body: json
+  auth: bearer
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzMDUzNTU4LCJpYXQiOjE3NjMwNDk5NTgsImp0aSI6IjAyZGQ1MmUzYzA1MzRlZDlhNzFmYTRhNWJkYmJiNTgxIiwidXNlcl9pZCI6IjEifQ.KDqE0lPJx0WSPLx2OxKFetyXRS2KkNM5tZvTQIxHa7s
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY1ODk0NTYxLCJpYXQiOjE3NjU4OTA5NjEsImp0aSI6ImRmYjMyMzExMzY0NzRhMjFiNzEzN2IxODNmNzI5YWQ2IiwidXNlcl9pZCI6IjUifQ.6CiD8Jn9DSVQCRFEBiJG3WZX4LEQrQK3Rl1x3P-Hhfk
+}
+
+body:json {
+  {
+      "organizationid": 1,
+      "moduleid": 1,
+      "name": "Leave Application Workflow",
+      "description": "Standard approval process for employee leaves.",
+      "levels": [
+          {
+              "flowlevel": 1,
+              "name": "Team Lead Approval",
+              "description": "First level approval by immediate supervisor",
+              "approverid": null, 
+              "autoapprove": false,
+              "timelimit": 24,
+              "isfinallevel": false,
+              "isparallel": false
+          },
+          {
+              "flowlevel": 2,
+              "name": "HR Head Approval",
+              "description": "Final verification by HR department",
+              "approverid": 2, 
+              "autoapprove": false,
+              "timelimit": 48,
+              "isfinallevel": true,
+              "isparallel": false
+          }
+      ]
+  }
+}
+
+settings {
+  encodeUrl: true
+}

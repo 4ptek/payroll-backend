@@ -1,0 +1,19 @@
+meta {
+  name: Get_User_by_id
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://127.0.0.1:8000/users/1
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYyOTY5MjUzLCJpYXQiOjE3NjI5NjU2NTMsImp0aSI6Ijg5MWI1NTdiMmVkNzQ5MjBiOGYxYTE1NWVmNzk1NGFhIiwidXNlcl9pZCI6IjEifQ.3pV1NFN-vR4-p1EewgiA4kqWjJk9VNj6TwnzOyIMHqk
+}
+
+settings {
+  encodeUrl: true
+}

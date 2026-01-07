@@ -1,0 +1,27 @@
+meta {
+  name: edit_org_by_id
+  type: http
+  seq: 7
+}
+
+patch {
+  url: http://127.0.0.1:8000/organizations/30
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3MjgwMTQ1LCJpYXQiOjE3NjcyNzY1NDUsImp0aSI6IjQzNWE1N2ZiZjg3MDQ3YjFhZjY0YThiODM1MjU5ZTI0IiwidXNlcl9pZCI6IjEiLCJvcmdfaWQiOjEsImVtcGxveWVlX2lkIjo0Miwicm9sZV9pZCI6Mn0.R6zyQwyU4l_Lxgs3lJqOOnacFWLj-AFvegad6FXVHLw
+  Content-Type: application/json
+}
+
+body:json {
+  {
+      "phone": "+923208252579"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+}
