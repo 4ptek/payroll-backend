@@ -158,3 +158,24 @@ class BookingSerializer(serializers.ModelSerializer):
         response['invited_people'] = invited_people
 
         return response
+    
+class RoomUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rooms
+        fields = ['room_name', 'building', 'floor', 'capacity', 'amenities']
+
+    def validate(self, data):
+        # Unique room name check within organization (excluding current room)
+        room_name = data.get('room_name')
+        organization = self.instance.organizationid
+        
+        if room_name:
+            query = Rooms.objects.filter(
+                room_name__iexact=room_name, 
+                organizationid=organization
+            ).exclude(pk=self.instance.pk)
+            
+            if query.exists():
+                raise serializers.ValidationError({"room_name": "A room with this name already exists."})
+        return data
+    

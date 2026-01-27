@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from .models import Rooms, Bookings
-from .serializers import RoomSerializer, BookingSerializer
+from .serializers import RoomSerializer, BookingSerializer, RoomUpdateSerializer
 
 
 class StandardPagination(PageNumberPagination):
@@ -71,3 +71,14 @@ class BookingListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(booking_date__range=[start_date, end_date])        
 
         return queryset.order_by('-booking_date', '-start_time')
+    
+class RoomUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Rooms.objects.all()
+    serializer_class = RoomUpdateSerializer 
+    lookup_field = 'room_id'
+    permission_classes = [permissions.IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response({"message": "Room deleted successfully"}, status=status.HTTP_200_OK)

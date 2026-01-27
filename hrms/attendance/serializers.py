@@ -72,3 +72,18 @@ class AttendanceSerializer(serializers.ModelSerializer):
             response['createdby'] = UserSerializer(instance.createdby).data
             
         return response
+    
+class AttendancePolicyUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendancepolicies
+        exclude = ('createdby', 'createdat', 'deletedby', 'deleteat', 'isdelete')
+
+class AttendanceUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = ['startdate', 'enddate', 'description', 'attendancepolicyid', 'totaldays', 'isactive']
+
+class AttendanceDetailUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendancedetail
+        fields = ['checkin', 'checkout', 'totalhours', 'status', 'remarks', 'isactive']

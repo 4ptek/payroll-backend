@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from .models import Attendancepolicies, Attendance, Attendancedetail
-from .serializers import AttendancePolicySerializer, AttendanceSerializer, AttendanceDetailSerializer, FileUploadSerializer, AttendanceDetailReportSerializer
+from .serializers import AttendanceDetailUpdateSerializer, AttendancePolicySerializer, AttendancePolicyUpdateSerializer, AttendanceSerializer, AttendanceDetailSerializer, AttendanceUpdateSerializer, FileUploadSerializer, AttendanceDetailReportSerializer
 from rest_framework.views import APIView
 from Helpers.ResponseHandler import custom_response
 from rest_framework import status
@@ -575,3 +575,65 @@ class EmployeeMonthlyAttendanceView(generics.ListAPIView):
             },
             "records": serializer.data
         })
+        
+class AttendancePolicyUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Attendancepolicies.objects.filter(isdelete=False)
+    serializer_class = AttendancePolicyUpdateSerializer
+    lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        serializer.save(
+            updatedby=self.request.user if self.request.user.is_authenticated else None,
+            updateat=timezone.now()
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.isdelete = True
+        instance.isactive = False
+        instance.deletedby = request.user if request.user.is_authenticated else None
+        instance.deleteat = timezone.now()
+        instance.save()
+        return Response({"message": "Policy deleted successfully"}, status=status.HTTP_200_OK)
+
+
+# --- 2. Attendance (Cycle) Update/Delete ---
+class AttendanceUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Attendance.objects.filter(isdelete=False)
+    serializer_class = AttendanceUpdateSerializer
+    lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        serializer.save(
+            updatedby=self.request.user if self.request.user.is_authenticated else None,
+            updateat=timezone.now()
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.isdelete = True
+        instance.deletedby = request.user if request.user.is_authenticated else None
+        instance.deleteat = timezone.now()
+        instance.save()
+        return Response({"message": "Attendance cycle deleted successfully"}, status=status.HTTP_200_OK)
+
+
+# --- 3. Attendance Detail (Daily Log) Update/Delete ---
+class AttendanceDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Attendancedetail.objects.filter(isdelete=False)
+    serializer_class = AttendanceDetailUpdateSerializer
+    lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        serializer.save(
+            updatedby=self.request.user if self.request.user.is_authenticated else None,
+            updateat=timezone.now()
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.isdelete = True
+        instance.deletedby = request.user if request.user.is_authenticated else None
+        instance.deleteat = timezone.now()
+        instance.save()
+        return Response({"message": "Attendance detail record deleted successfully"}, status=status.HTTP_200_OK)
