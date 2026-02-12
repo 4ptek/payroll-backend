@@ -599,7 +599,7 @@ class AttendancePolicyUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- 2. Attendance (Cycle) Update/Delete ---
 class AttendanceUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Attendance.objects.filter(isdelete=False)
+    queryset = Attendance.objects.filter(isdelete=False,status='Open')
     serializer_class = AttendanceUpdateSerializer
     lookup_field = 'id'
 
