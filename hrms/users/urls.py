@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import CustomRefreshView, ForgotPasswordView, LoginView,LogoutView, ResetPasswordView, UserListView, UserDetailView, UserRoleListView, UserRoleDetailView
+from .views import CustomRefreshView, ForgotPasswordView, LoginView,LogoutView, ResetPasswordView, SSOLoginView, UserListView, UserDetailView, UserRoleListView, UserRoleDetailView
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     #--- AUTH
     path('auth/login', LoginView.as_view(), name='jwt_login'),
+    path('auth/sso-login', SSOLoginView.as_view(), name='sso_login'),
     path('auth/refresh', CustomRefreshView.as_view(), name='custom_token_refresh'),
     path('auth/forgot-password', ForgotPasswordView.as_view(), name='forgot_password'),
     path('auth/reset-password', ResetPasswordView.as_view(), name='reset_password'),

@@ -10,11 +10,6 @@ from django.db import models
 
 class Users(models.Model):
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid', blank=True, null=True)
-    email = models.TextField()
-    userpassword = models.TextField()
-    username = models.TextField()
-    phone = models.TextField(blank=True, null=True)
-    lastlogin = models.DateTimeField(blank=True, null=True)
     createdby = models.ForeignKey('self', models.DO_NOTHING, db_column='createdby', blank=True, null=True)
     isactive = models.BooleanField(blank=True, null=True)
     isdelete = models.BooleanField(blank=True, null=True)
@@ -24,9 +19,9 @@ class Users(models.Model):
     deletedby = models.ForeignKey('self', models.DO_NOTHING, db_column='deletedby', related_name='users_deletedby_set', blank=True, null=True)
     deleteat = models.DateTimeField(blank=True, null=True)
     employeeid = models.ForeignKey('employee.Employees', models.DO_NOTHING, db_column='employeeid', blank=True, null=True)
-    roleid = models.ForeignKey('users.Userroles', models.DO_NOTHING, db_column='roleid', blank=True, null=True)
+    roleid = models.ForeignKey('Userroles', models.DO_NOTHING, db_column='roleid', blank=True, null=True)
+    master_user_id = models.IntegerField(unique=True, blank=True, null=True)
 
-    # A unique constraint could not be introspected.
     class Meta:
         managed = False
         db_table = 'users'

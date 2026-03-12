@@ -111,11 +111,14 @@ WSGI_APPLICATION = 'hrms.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'HRMS', 
-        'USER': 'postgres',  
-        'PASSWORD': 'Waq03158', 
-        'HOST': '116.90.108.83',
-        'PORT': '15432',
+        'NAME': 'Multi_tenancy',
+        'USER': 'postgres',
+        'PASSWORD': '123', 
+        'HOST': 'localhost',      
+        'PORT': '5432',         
+        'OPTIONS': {
+            'options': '-c search_path=hrms,public' 
+        }
     }
 }
 
@@ -214,4 +217,5 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-service-secret',
 ]

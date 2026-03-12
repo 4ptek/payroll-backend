@@ -14,7 +14,7 @@ from .models import Userroles, Users
 from .utils import check_password, make_password
 from Helpers.ResponseHandler import custom_response
 from django.utils.html import strip_tags
-
+import os
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -511,3 +511,80 @@ class UserRoleDetailView(APIView):
                 message=str(e),
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+#===================
+class SSOLoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        # 1. Service secret verify karo
+        service_secret = request.headers.get('x-service-secret')
+        expected = os.getenv('SERVICE_SECRET_KEY')
+
+        if not service_secret or service_secret != expected:
+            return custom_response(
+                data=None,
+                message="Unauthorized",
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # 2. Data lo
+        user_id = request.data.get('userId')
+        email = request.data.get('email')
+
+        print(f"userId: {user_id}, email: {email}")
+        
+        if not user_id or not email:
+            return custom_response(
+                data=None,
+                message="userId and email required",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3. master_user_id se HRMS user dhundo
+        try:
+            user = Users.objects.get(
+                master_user_id=user_id,
+                isactive=True,
+                isdelete=False
+            )
+            print(f"User found: {user.id}") 
+        except Users.DoesNotExist:
+            return custom_response(
+                data=None,
+                message="User not found in HRMS",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 4. Employee active check (existing pattern same rakha)
+        if user.employeeid:
+            if not user.employeeid.isactive:
+                return custom_response(
+                    data=None,
+                    message="Employee account is inactive",
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # 5. HRMS ka apna JWT banao (existing pattern same)
+        refresh = RefreshToken.for_user(user)
+        org_id = user.organizationid.id if user.organizationid else None
+        emp_id = user.employeeid_id if user.employeeid else None
+
+        refresh["org_id"] = org_id
+        refresh["employee_id"] = emp_id
+        refresh.access_token["org_id"] = org_id
+        refresh.access_token["employee_id"] = emp_id
+
+        if user.roleid:
+            refresh["role_id"] = user.roleid.id
+            refresh.access_token["role_id"] = user.roleid.id
+
+        return custom_response(
+            data={
+                "token": str(refresh.access_token),
+                "refresh": str(refresh),
+                "redirectUrl": os.getenv('HRMS_FRONTEND_URL', 'http://localhost:3001/dashboard'),
+            },
+            message="SSO login successful",
+            status=status.HTTP_200_OK
+        )
