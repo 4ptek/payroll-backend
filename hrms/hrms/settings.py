@@ -59,7 +59,8 @@ INSTALLED_APPS = [
     'leaves',
     'django_filters',
     'salary_structure',
-    'payroll'
+    'payroll',
+    'sales'
 ]
 
 MIDDLEWARE = [
@@ -111,13 +112,23 @@ WSGI_APPLICATION = 'hrms.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'HRMS', 
+        'NAME': 'HRMS_backup', 
         'USER': 'postgres',  
-        'PASSWORD': 'Waq03158', 
-        'HOST': '116.90.108.83',
-        'PORT': '15432',
+        'PASSWORD': '123', 
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'HRMS', 
+#         'USER': 'postgres',  
+#         'PASSWORD': 'Waq03158', 
+#         'HOST': '116.90.108.83',
+#         'PORT': '15432',
+#     }
+# }
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
