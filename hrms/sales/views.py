@@ -734,8 +734,113 @@ def _get_active_commission(employee, team, month, year):
     return None
 
 
+# def _generate_report_for_employee(employee, org, month, year, requested_by):
+#     # 1. Is employee ka team nikalo
+#     membership = SalesTeamMembers.objects.filter(
+#         employeeid=employee,
+#         isactive=True,
+#         isdelete=False
+#     ).first()
+#     team = membership.teamid if membership else None
+
+#     # 2. Individual sales total (sirf verified entries)
+#     individual_sales_agg = SalesEntries.objects.filter(
+#         employeeid=employee,
+#         organizationid=org,
+#         saledate__month=month,
+#         saledate__year=year,
+#         isverified=True,
+#         isdelete=False
+#     ).aggregate(total=Sum('totalamount'))
+#     total_individual_sales = individual_sales_agg['total'] or Decimal('0.00')
+
+#     # 3. Team sales total
+#     total_team_sales = Decimal('0.00')
+#     if team:
+#         team_sales_agg = SalesEntries.objects.filter(
+#             teamid=team,
+#             organizationid=org,
+#             saledate__month=month,
+#             saledate__year=year,
+#             isverified=True,
+#             isdelete=False
+#         ).aggregate(total=Sum('totalamount'))
+#         total_team_sales = team_sales_agg['total'] or Decimal('0.00')
+
+#     # 4. Individual target
+#     individual_target_obj = SalesTargets.objects.filter(
+#         employeeid=employee,
+#         targetlevel='INDIVIDUAL',
+#         targetmonth=month,
+#         targetyear=year,
+#         isdelete=False
+#     ).first()
+#     individual_target = individual_target_obj.targetamount if individual_target_obj else None
+
+#     # 5. Team target
+#     team_target = None
+#     if team:
+#         team_target_obj = SalesTargets.objects.filter(
+#             teamid=team,
+#             targetlevel='TEAM',
+#             targetmonth=month,
+#             targetyear=year,
+#             isdelete=False
+#         ).first()
+#         team_target = team_target_obj.targetamount if team_target_obj else None
+
+#     # 6. Achievement percentage — individual pe based
+#     achievement_pct = None
+#     if individual_target and individual_target > 0:
+#         achievement_pct = round((total_individual_sales / individual_target) * 100, 2)
+
+#     # 7. Commission structure — individual override > team fallback
+#     commission_structure = _get_active_commission(employee, team, month, year)
+
+#     # 8. Commission calculate karo
+#     commission_earned = calculate_commission(commission_structure, total_individual_sales)
+
+#     # 9. Basic salary snapshot (employees table se)
+#     basic_salary = employee.basicsalary or Decimal('0.00')
+
+#     # 10. Total payout
+#     total_payout = basic_salary + commission_earned
+
+#     # 11. Report save ya update karo
+#     report, created = SalesMonthlyReports.objects.update_or_create(
+#         employeeid=employee,
+#         reportmonth=month,
+#         reportyear=year,
+#         defaults={
+#             'organizationid': org,
+#             'teamid': team,
+#             'individualtarget': individual_target,
+#             'teamtarget': team_target,
+#             'totalindividualsales': total_individual_sales,
+#             'totalteamsales': total_team_sales,
+#             'achievementpercentage': achievement_pct,
+#             'basicsalary': basic_salary,
+#             'commissionearned': commission_earned,
+#             'totalpayout': total_payout,
+#             'commissionstructureid': commission_structure,
+#             'isgeneratedmanually': True,
+#             'generatedat': timezone.now(),
+#             'generatedby': requested_by,
+#             'isactive': True,
+#             'isdelete': False,
+#             'createdat': timezone.now(),
+#             'createdby': requested_by,
+#             'updateat': timezone.now(),
+#             'updatedby': requested_by,
+#         }
+#     )
+
+#     return report, created, None
+
 def _generate_report_for_employee(employee, org, month, year, requested_by):
-    # 1. Is employee ka team nikalo
+    from decimal import Decimal
+
+    # 1. Team nikaalo
     membership = SalesTeamMembers.objects.filter(
         employeeid=employee,
         isactive=True,
@@ -743,7 +848,7 @@ def _generate_report_for_employee(employee, org, month, year, requested_by):
     ).first()
     team = membership.teamid if membership else None
 
-    # 2. Individual sales total (sirf verified entries)
+    # 2. Individual sales
     individual_sales_agg = SalesEntries.objects.filter(
         employeeid=employee,
         organizationid=org,
@@ -752,9 +857,10 @@ def _generate_report_for_employee(employee, org, month, year, requested_by):
         isverified=True,
         isdelete=False
     ).aggregate(total=Sum('totalamount'))
+
     total_individual_sales = individual_sales_agg['total'] or Decimal('0.00')
 
-    # 3. Team sales total
+    # 3. Team sales
     total_team_sales = Decimal('0.00')
     if team:
         team_sales_agg = SalesEntries.objects.filter(
@@ -765,6 +871,7 @@ def _generate_report_for_employee(employee, org, month, year, requested_by):
             isverified=True,
             isdelete=False
         ).aggregate(total=Sum('totalamount'))
+
         total_team_sales = team_sales_agg['total'] or Decimal('0.00')
 
     # 4. Individual target
@@ -775,6 +882,7 @@ def _generate_report_for_employee(employee, org, month, year, requested_by):
         targetyear=year,
         isdelete=False
     ).first()
+
     individual_target = individual_target_obj.targetamount if individual_target_obj else None
 
     # 5. Team target
@@ -787,56 +895,90 @@ def _generate_report_for_employee(employee, org, month, year, requested_by):
             targetyear=year,
             isdelete=False
         ).first()
+
         team_target = team_target_obj.targetamount if team_target_obj else None
 
-    # 6. Achievement percentage — individual pe based
+    # 6. Achievement %
     achievement_pct = None
     if individual_target and individual_target > 0:
         achievement_pct = round((total_individual_sales / individual_target) * 100, 2)
 
-    # 7. Commission structure — individual override > team fallback
+    # 7. Commission structure
     commission_structure = _get_active_commission(employee, team, month, year)
 
-    # 8. Commission calculate karo
-    commission_earned = calculate_commission(commission_structure, total_individual_sales)
+    # 8. Commission calculate
+    commission_earned = calculate_commission(
+        commission_structure,
+        total_individual_sales
+    )
 
-    # 9. Basic salary snapshot (employees table se)
+    # 9. Basic salary
     basic_salary = employee.basicsalary or Decimal('0.00')
 
     # 10. Total payout
     total_payout = basic_salary + commission_earned
 
-    # 11. Report save ya update karo
-    report, created = SalesMonthlyReports.objects.update_or_create(
+    # 11. MANUAL UPDATE / CREATE LOGIC
+
+    existing_report = SalesMonthlyReports.objects.filter(
         employeeid=employee,
         reportmonth=month,
-        reportyear=year,
-        defaults={
-            'organizationid': org,
-            'teamid': team,
-            'individualtarget': individual_target,
-            'teamtarget': team_target,
-            'totalindividualsales': total_individual_sales,
-            'totalteamsales': total_team_sales,
-            'achievementpercentage': achievement_pct,
-            'basicsalary': basic_salary,
-            'commissionearned': commission_earned,
-            'totalpayout': total_payout,
-            'commissionstructureid': commission_structure,
-            'isgeneratedmanually': True,
-            'generatedat': timezone.now(),
-            'generatedby': requested_by,
-            'isactive': True,
-            'isdelete': False,
-            'createdat': timezone.now(),
-            'createdby': requested_by,
-            'updateat': timezone.now(),
-            'updatedby': requested_by,
-        }
-    )
+        reportyear=year
+    ).first()
 
-    return report, created, None
+    if existing_report:
+        existing_report.organizationid = org
+        existing_report.teamid = team
+        existing_report.individualtarget = individual_target
+        existing_report.teamtarget = team_target
+        existing_report.totalindividualsales = total_individual_sales
+        existing_report.totalteamsales = total_team_sales
+        existing_report.achievementpercentage = achievement_pct
+        existing_report.basicsalary = basic_salary
+        existing_report.commissionearned = commission_earned
+        existing_report.totalpayout = total_payout
+        existing_report.commissionstructureid = commission_structure
+        existing_report.isgeneratedmanually = True
+        existing_report.generatedat = timezone.now()
+        existing_report.generatedby = requested_by
+        existing_report.isactive = True
+        existing_report.isdelete = False
+        existing_report.updateat = timezone.now()
+        existing_report.updatedby = requested_by
 
+        existing_report.save()
+
+        return existing_report, False, None
+
+    else:
+        report = SalesMonthlyReports.objects.create(
+            id=get_next_id('sales_monthly_reports_id_seq'),  # 👈 FIX
+            employeeid=employee,
+            reportmonth=month,
+            reportyear=year,
+            organizationid=org,
+            teamid=team,
+            individualtarget=individual_target,
+            teamtarget=team_target,
+            totalindividualsales=total_individual_sales,
+            totalteamsales=total_team_sales,
+            achievementpercentage=achievement_pct,
+            basicsalary=basic_salary,
+            commissionearned=commission_earned,
+            totalpayout=total_payout,
+            commissionstructureid=commission_structure,
+            isgeneratedmanually=True,
+            generatedat=timezone.now(),
+            generatedby=requested_by,
+            isactive=True,
+            isdelete=False,
+            createdat=timezone.now(),
+            createdby=requested_by,
+            updateat=timezone.now(),
+            updatedby=requested_by,
+        )
+
+        return report, True, None
 
 class SalesReportGenerateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
