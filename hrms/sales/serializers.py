@@ -112,7 +112,9 @@ class SalesTeamListSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'department_name',
+            'departmentid',
             'team_leader_name',
+            'teamleaderid',
             'total_members',
             'isactive',
             'createdat',
@@ -120,13 +122,22 @@ class SalesTeamListSerializer(serializers.ModelSerializer):
 
     def get_department_name(self, obj):
         return obj.departmentid.name if obj.departmentid else None
-
+    
+    def get_department_id(self, obj):
+        return obj.departmentid if obj.departmentid else None
+    
     def get_team_leader_name(self, obj):
         if obj.teamleaderid:
             emp = obj.teamleaderid
-            return f"{emp.firstname or ''} {emp.lastname or ''}".strip()
+            name = f"{emp.firstname or ''} {emp.lastname or ''}".strip()
+            if name:
+                return f"{name}"
+            return f"({emp.id})"
         return None
 
+    def get_team_leader_id(self, obj):
+        return obj.teamleaderid if obj.teamleaderid else None
+    
     def get_total_members(self, obj):
         return obj.salesteammembers_set.filter(isactive=True, isdelete=False).count()
 
@@ -157,7 +168,10 @@ class SalesTeamDetailSerializer(serializers.ModelSerializer):
     def get_team_leader_name(self, obj):
         if obj.teamleaderid:
             emp = obj.teamleaderid
-            return f"{emp.firstname or ''} {emp.lastname or ''}".strip()
+            name = f"{emp.firstname or ''} {emp.lastname or ''}".strip()
+            if name:
+                return f"{name} ({emp.id})"
+            return f"({emp.id})"
         return None
 
     def get_members(self, obj):
