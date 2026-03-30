@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.utils import timezone
+from django.db import connection
 from django.db.models import Sum, Q
 from decimal import Decimal
 
@@ -34,6 +35,11 @@ from .serializers import (
 def get_org(request):
     return getattr(request.user, 'organizationid', None)
 
+def get_next_id(sequence_name):
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT nextval('{sequence_name}')")
+        return cursor.fetchone()[0]
+
 # 1. SALES TEAMS
 class SalesTeamCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -51,6 +57,7 @@ class SalesTeamCreateView(APIView):
                     }, status=status.HTTP_403_FORBIDDEN)
 
                 serializer.save(
+                    id=get_next_id('sales_teams_id_seq'),
                     organizationid=org,
                     createdby=request.user,
                     createdat=timezone.now(),
@@ -257,6 +264,7 @@ class SalesTeamMemberAddView(APIView):
 
             if serializer.is_valid():
                 serializer.save(
+                    id=get_next_id('sales_team_members_id_seq'),
                     teamid=team,
                     organizationid=org,
                     createdby=request.user,
@@ -354,6 +362,7 @@ class CommissionStructureCreateView(APIView):
                     }, status=status.HTTP_403_FORBIDDEN)
 
                 serializer.save(
+                    id=get_next_id('sales_commission_structures_id_seq'),
                     organizationid=org,
                     createdby=request.user,
                     createdat=timezone.now(),
@@ -442,6 +451,7 @@ class SalesTargetCreateView(APIView):
                     }, status=status.HTTP_403_FORBIDDEN)
 
                 serializer.save(
+                    id=get_next_id('sales_targets_id_seq'),
                     organizationid=org,
                     createdby=request.user,
                     createdat=timezone.now(),
@@ -550,6 +560,7 @@ class SalesEntryCreateView(APIView):
                 team = team_membership.teamid if team_membership else None
 
                 serializer.save(
+                    id=get_next_id('sales_entries_id_seq'),
                     organizationid=org,
                     employeeid=employee,
                     teamid=team,
@@ -857,7 +868,7 @@ class SalesReportGenerateView(APIView):
 
             if emp_id:
                 # Mode 2: Single employee
-                from hrms.employee.models import Employees  
+                from employee.models import Employees  
                 try:
                     emp = Employees.objects.get(id=emp_id, organizationid=org, isdelete=False)
                     employees_to_process = [emp]

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from decimal import Decimal
+from django.db import connection
 from .models import (
     SalesTeams,
     SalesTeamMembers,
@@ -9,6 +10,10 @@ from .models import (
     SalesEntries,
     SalesMonthlyReports,
 )
+def get_next_id(sequence_name):
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT nextval('{sequence_name}')")
+        return cursor.fetchone()[0]
 
 def calculate_commission(commission_structure, total_sales):
     if not commission_structure:
@@ -266,6 +271,7 @@ class CommissionStructureCreateSerializer(serializers.ModelSerializer):
 
         for tier in tiers_data:
             SalesCommissionTiers.objects.create(
+                id=get_next_id('sales_commission_tiers_id_seq'),
                 commissionstructureid=structure,
                 **tier
             )

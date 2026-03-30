@@ -2,7 +2,7 @@ from django.db import models
 
 
 class SalesTeams(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     departmentid = models.ForeignKey('department.Departments', models.DO_NOTHING, db_column='departmentid', blank=True, null=True)
     name = models.TextField()
@@ -23,7 +23,7 @@ class SalesTeams(models.Model):
 
 
 class SalesTeamMembers(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     teamid = models.ForeignKey(SalesTeams, models.DO_NOTHING, db_column='teamid')
     employeeid = models.ForeignKey('employee.Employees', models.DO_NOTHING, db_column='employeeid')
@@ -45,7 +45,7 @@ class SalesTeamMembers(models.Model):
 
 
 class SalesCommissionStructures(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     name = models.TextField()
     applylevel = models.TextField()                 # 'TEAM' or 'INDIVIDUAL'
@@ -70,7 +70,7 @@ class SalesCommissionStructures(models.Model):
 
 
 class SalesCommissionTiers(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     commissionstructureid = models.ForeignKey(SalesCommissionStructures, models.DO_NOTHING, db_column='commissionstructureid')
     minamount = models.DecimalField(max_digits=15, decimal_places=2)
     maxamount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
@@ -83,7 +83,7 @@ class SalesCommissionTiers(models.Model):
 
 
 class SalesTargets(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     targetlevel = models.TextField()               # 'TEAM' or 'INDIVIDUAL'
     teamid = models.ForeignKey(SalesTeams, models.DO_NOTHING, db_column='teamid', blank=True, null=True)
@@ -108,7 +108,7 @@ class SalesTargets(models.Model):
 
 
 class SalesEntries(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     employeeid = models.ForeignKey('employee.Employees', models.DO_NOTHING, db_column='employeeid')
     teamid = models.ForeignKey(SalesTeams, models.DO_NOTHING, db_column='teamid', blank=True, null=True)
@@ -137,7 +137,7 @@ class SalesEntries(models.Model):
 
 
 class SalesMonthlyReports(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     organizationid = models.ForeignKey('organization.Organizations', models.DO_NOTHING, db_column='organizationid')
     employeeid = models.ForeignKey('employee.Employees', models.DO_NOTHING, db_column='employeeid')
     teamid = models.ForeignKey(SalesTeams, models.DO_NOTHING, db_column='teamid', blank=True, null=True)
