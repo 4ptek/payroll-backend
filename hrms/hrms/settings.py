@@ -60,7 +60,8 @@ INSTALLED_APPS = [
     'django_filters',
     'salary_structure',
     'payroll',
-    'sales'
+    'sales',
+    'platforms',
 ]
 
 MIDDLEWARE = [
